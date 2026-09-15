@@ -1,6 +1,15 @@
-# ClassicVoice
+<p align="center">
+  <img src="assets/logo.png" alt="ClassicVoice" width="128"><br>
+  <strong>ClassicVoice</strong>
+</p>
 
-**Write text. Tune the voice. Preview it. Export WAV.**
+<p align="center">
+  <em>Write text. Tune the voice. Preview it. Export WAV.</em>
+</p>
+
+<p align="center">
+  <img src="assets/social-banner.png" alt="ClassicVoice Banner" width="640">
+</p>
 
 ClassicVoice is a tiny local-first desktop utility for classic synthetic Spanish speech. It provides a clean UI over eSpeak NG with a small set of useful presets and direct control over speed, pitch and volume.
 
