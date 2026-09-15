@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import ctypes
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -10,52 +12,92 @@ from tkinter import filedialog, messagebox, ttk
 from .core import PRESETS, VoicePreset, build_espeak_command, resolve_espeak
 
 APP_DIR = Path(__file__).resolve().parents[2]
+CONFIG_PATH = APP_DIR / "classicvoice.json"
+
+# DPI awareness for consistent rendering on Windows
+if os.name == "nt":
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)
+    except Exception:
+        try:
+            ctypes.windll.user32.SetProcessDPIAware()
+        except Exception:
+            pass
+
+
+def _load_config() -> dict:
+    try:
+        return json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _save_config(cfg: dict) -> None:
+    CONFIG_PATH.write_text(json.dumps(cfg, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
 class ClassicVoiceApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("ClassicVoice")
-        self.geometry("620x500")
-        self.minsize(560, 450)
+        self.geometry("620x520")
+        self.minsize(560, 460)
 
-        self.preset_label = tk.StringVar(value=PRESETS[0].label)
-        self.speed = tk.IntVar(value=PRESETS[0].speed)
-        self.pitch = tk.IntVar(value=PRESETS[0].pitch)
-        self.volume = tk.IntVar(value=PRESETS[0].amplitude)
+        # Load saved config
+        cfg = _load_config()
+        saved_preset = cfg.get("preset", PRESETS[0].label)
+        self.preset_label = tk.StringVar(value=saved_preset)
+        self.speed = tk.IntVar(value=cfg.get("speed", PRESETS[0].speed))
+        self.pitch = tk.IntVar(value=cfg.get("pitch", PRESETS[0].pitch))
+        self.volume = tk.IntVar(value=cfg.get("volume", PRESETS[0].amplitude))
+        self._last_dir = cfg.get("last_dir", str(APP_DIR / "output"))
         self.status = tk.StringVar(value="Listo")
         self.preview_file = Path(tempfile.gettempdir()) / "classicvoice_preview.wav"
 
         self._style()
         self._build()
+        self.protocol("WM_DELETE_WINDOW", self._close)
 
     def _style(self):
         style = ttk.Style(self)
         if "vista" in style.theme_names():
             style.theme_use("vista")
         style.configure("Title.TLabel", font=("Segoe UI", 20, "bold"))
+        style.configure("Sub.TLabel", font=("Segoe UI", 9))
         style.configure("Action.TButton", font=("Segoe UI", 10, "bold"), padding=9)
+        style.configure("Dim.TLabel", font=("Segoe UI", 8), foreground="#888888")
 
     def _build(self):
         root = ttk.Frame(self, padding=22)
         root.pack(fill="both", expand=True)
         ttk.Label(root, text="ClassicVoice", style="Title.TLabel").pack(anchor="w")
-        ttk.Label(root, text="Síntesis de voz clásica, local y sin cuentas.").pack(anchor="w", pady=(0, 14))
+        ttk.Label(root, text="Síntesis de voz clásica, local y sin cuentas.", style="Sub.TLabel").pack(anchor="w", pady=(0, 14))
 
-        self.text = tk.Text(root, height=10, wrap="word", font=("Segoe UI", 11), undo=True)
+        self.text = tk.Text(root, height=8, wrap="word", font=("Segoe UI", 11), undo=True)
         self.text.pack(fill="both", expand=True)
         self.text.insert("1.0", "Hola. Esto es una prueba de ClassicVoice.")
 
-        controls = ttk.Frame(root)
+        controls = ttk.LabelFrame(root, text="Configuración", padding=8)
         controls.pack(fill="x", pady=(14, 0))
-        ttk.Label(controls, text="Preset").grid(row=0, column=0, sticky="w")
-        combo = ttk.Combobox(controls, textvariable=self.preset_label, values=[p.label for p in PRESETS], state="readonly", width=22)
-        combo.grid(row=0, column=1, sticky="w", padx=(10, 24))
+
+        row0 = ttk.Frame(controls)
+        row0.pack(fill="x", pady=(0, 6))
+        ttk.Label(row0, text="Preset").pack(side="left")
+        combo = ttk.Combobox(row0, textvariable=self.preset_label, values=[p.label for p in PRESETS], state="readonly", width=22)
+        combo.pack(side="left", padx=(8, 0))
         combo.bind("<<ComboboxSelected>>", self._apply_preset)
 
-        self._slider(controls, "Velocidad", self.speed, 80, 300, 1)
-        self._slider(controls, "Tono", self.pitch, 0, 99, 2)
-        self._slider(controls, "Volumen", self.volume, 0, 200, 3)
+        self._slider(controls, "Velocidad", self.speed, 80, 300)
+        self._slider(controls, "Tono", self.pitch, 0, 99)
+        self._slider(controls, "Volumen", self.volume, 0, 200)
+
+        # Output folder row
+        folder_frame = ttk.Frame(controls)
+        folder_frame.pack(fill="x", pady=(4, 0))
+        ttk.Label(folder_frame, text="Carpeta").pack(side="left")
+        self.dir_label = ttk.Label(folder_frame, text=self._short_dir(), style="Dim.TLabel", width=35, anchor="w")
+        self.dir_label.pack(side="left", padx=(8, 4))
+        ttk.Button(folder_frame, text="…", width=3, command=self._choose_dir).pack(side="left")
 
         buttons = ttk.Frame(root)
         buttons.pack(fill="x", pady=(18, 7))
@@ -63,23 +105,39 @@ class ClassicVoiceApp(tk.Tk):
         ttk.Button(buttons, text="Guardar WAV", style="Action.TButton", command=self._save).pack(side="left", expand=True, fill="x", padx=(6, 0))
         ttk.Label(root, textvariable=self.status).pack(anchor="center")
 
-    def _slider(self, parent, label, variable, low, high, row):
-        ttk.Label(parent, text=label).grid(row=row, column=0, sticky="w", pady=5)
+    def _short_dir(self) -> str:
+        d = self._last_dir
+        if len(d) > 38:
+            return "…" + d[-35:]
+        return d
+
+    def _choose_dir(self):
+        chosen = filedialog.askdirectory(
+            title="Carpeta de guardado",
+            initialdir=self._last_dir,
+        )
+        if chosen:
+            self._last_dir = chosen
+            self.dir_label.configure(text=self._short_dir())
+
+    def _slider(self, parent, label, variable, low, high):
+        row = ttk.Frame(parent)
+        row.pack(fill="x", pady=2)
+        ttk.Label(row, text=label, width=8).pack(side="left")
         scale = tk.Scale(
-            parent,
+            row,
             from_=low,
             to=high,
             variable=variable,
             orient="horizontal",
-            showvalue=False,
+            showvalue=True,
             resolution=1,
             highlightthickness=0,
             bd=0,
+            length=300,
         )
-        scale.grid(row=row, column=1, sticky="ew", padx=(10, 10))
-        value = ttk.Label(parent, textvariable=variable, width=4)
-        value.grid(row=row, column=2, sticky="e")
-        parent.columnconfigure(1, weight=1)
+        scale.pack(side="left", fill="x", expand=True, padx=(4, 4))
+        ttk.Label(row, textvariable=variable, width=4).pack(side="right")
 
     def _preset(self) -> VoicePreset:
         return next(p for p in PRESETS if p.label == self.preset_label.get())
@@ -130,19 +188,34 @@ class ClassicVoiceApp(tk.Tk):
             messagebox.showerror("No se pudo reproducir", str(exc))
 
     def _save(self):
-        output_dir = APP_DIR / "output"
-        output_dir.mkdir(exist_ok=True)
+        output_dir = Path(self._last_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
         selected = filedialog.asksaveasfilename(
             title="Guardar diálogo",
-            initialdir=output_dir,
+            initialdir=str(output_dir),
             initialfile="dialogue.wav",
             defaultextension=".wav",
             filetypes=[("Audio WAV", "*.wav")],
         )
         if not selected:
             return
+        # Remember the chosen directory
+        self._last_dir = str(Path(selected).parent)
+        self.dir_label.configure(text=self._short_dir())
         if self._generate(Path(selected)):
             self.status.set(f"Guardado: {Path(selected).name}")
+
+    def _close(self):
+        # Save config on exit
+        cfg = {
+            "preset": self.preset_label.get(),
+            "speed": self.speed.get(),
+            "pitch": self.pitch.get(),
+            "volume": self.volume.get(),
+            "last_dir": self._last_dir,
+        }
+        _save_config(cfg)
+        self.destroy()
 
 
 def main():
