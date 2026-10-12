@@ -4,21 +4,29 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "classicvoice"
-version = "0.1.0"
-description = "Minimal offline desktop front-end for classic-style Spanish TTS with eSpeak NG."
+version = "0.2.0"
+description = "Local-first Spanish text-to-speech desktop app with classic eSpeak NG voices."
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
-authors = [{name = "SMOUJ013"}]
+authors = [{name = "smouj"}]
 keywords = ["tts", "espeak-ng", "offline", "spanish", "local-first"]
 classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: Microsoft :: Windows",
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Multimedia :: Sound/Audio :: Speech",
+  "Topic :: Utilities",
 ]
+urls = {Homepage = "https://github.com/smouj/classicvoice", Repository = "https://github.com/smouj/classicvoice", Issues = "https://github.com/smouj/classicvoice/issues", Changelog = "https://github.com/smouj/classicvoice/blob/main/CHANGELOG.md"}
 
 [project.scripts]
 classicvoice = "classicvoice.app:main"
+
+[project.optional-dependencies]
+build = ["pyinstaller>=6.13,<7"]
+test = ["pytest>=8,<9"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

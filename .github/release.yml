@@ -1,0 +1,17 @@
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+  categories:
+    - title: Mejoras
+      labels:
+        - enhancement
+    - title: Correcciones
+      labels:
+        - bug
+    - title: Instalación y publicación
+      labels:
+        - release
+    - title: Otros cambios
+      labels:
+        - '*'

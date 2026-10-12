@@ -5,6 +5,15 @@ __pycache__/
 dist/
 build/
 *.egg-info/
+*.spec
 output/*.wav
+*.tmp
+*.normalizing
+dist/ClassicVoice-*-windows-x64.zip
+dist/ClassicVoice-*-windows-x64.sha256
 bin/*
 !bin/.gitkeep
+!bin/espeak-ng/
+bin/espeak-ng/*
+!bin/espeak-ng/.gitkeep
+licenses/espeak-ng-1.52.0-source.zip

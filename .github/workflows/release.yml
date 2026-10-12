@@ -1,0 +1,38 @@
+name: Windows release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    name: Build and publish Windows x64 package
+    runs-on: windows-latest
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Build, package, and publish
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          $version = $tag -replace '^v', ''
+          .\tools\build_windows.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Windows build failed.' }
+          .\tools\package_windows.ps1 -Version $version
+          if ($LASTEXITCODE -ne 0) { throw 'Windows package creation failed.' }
+          $archive = Join-Path $env:GITHUB_WORKSPACE "dist\ClassicVoice-$version-windows-x64.zip"
+          $checksum = Join-Path $env:GITHUB_WORKSPACE "dist\ClassicVoice-$version-windows-x64.sha256"
+          gh release create $tag $archive $checksum --repo $env:GITHUB_REPOSITORY --title "ClassicVoice $version" --generate-notes --verify-tag
+          if ($LASTEXITCODE -ne 0) { throw 'GitHub Release creation or asset upload failed.' }

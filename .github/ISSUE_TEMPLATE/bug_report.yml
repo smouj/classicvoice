@@ -1,25 +1,42 @@
-name: Bug report
-description: Report a reproducible ClassicVoice problem.
+name: Informar de un error
+description: Describe un fallo reproducible de ClassicVoice.
 title: "bug: "
 labels: [bug]
 body:
-  - type: textarea
-    id: problem
+  - type: markdown
     attributes:
-      label: What happened?
-    validations:
-      required: true
-  - type: textarea
-    id: reproduce
+      value: |-
+        No incluyas texto privado, WAV personales, contraseñas ni datos de cuenta.
+  - type: input
+    id: version
     attributes:
-      label: Steps to reproduce
+      label: Versión de ClassicVoice
+      placeholder: 0.2.0
     validations:
       required: true
   - type: input
     id: windows
     attributes:
-      label: Windows version
-  - type: input
-    id: espeak
+      label: Versión de Windows
+      placeholder: Windows 11 24H2, 64 bits
+    validations:
+      required: true
+  - type: textarea
+    id: steps
     attributes:
-      label: eSpeak NG version
+      label: Pasos para reproducirlo
+      description: No pegues texto sensible utilizado en la app.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Qué esperabas que ocurriera
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Qué ocurrió
+    validations:
+      required: true

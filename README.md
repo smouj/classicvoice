@@ -1,57 +1,88 @@
-<p align="center">
-  <img src="assets/logo.png" alt="ClassicVoice" width="128"><br>
-  <strong>ClassicVoice</strong>
-</p>
+<table align="center" bgcolor="#151722"><tr><td align="center">
+  <img src="assets/logo.png" alt="Logotipo de ClassicVoice" width="220">
+</td></tr></table>
+
+<h1 align="center">ClassicVoice</h1>
+
+<p align="center"><strong>Texto a voz clásico en español. Local, sencillo y en WAV.</strong></p>
 
 <p align="center">
-  <em>Write text. Tune the voice. Preview it. Export WAV.</em>
+  <a href="https://github.com/smouj/classicvoice/releases/latest"><img alt="Última versión" src="https://img.shields.io/github/v/release/smouj/classicvoice?label=versi%C3%B3n"></a>
+  <a href="https://github.com/smouj/classicvoice/actions/workflows/ci.yml"><img alt="Estado de CI" src="https://github.com/smouj/classicvoice/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+  <a href="https://github.com/smouj/classicvoice/stargazers"><img alt="Estrellas en GitHub" src="https://img.shields.io/github/stars/smouj/classicvoice?style=social"></a>
+  <a href="https://github.com/smouj/classicvoice/blob/main/LICENSE"><img alt="Licencia MIT" src="https://img.shields.io/github/license/smouj/classicvoice"></a>
+  <a href="https://github.com/smouj/classicvoice/releases"><img alt="Descargas" src="https://img.shields.io/github/downloads/smouj/classicvoice/total"></a>
 </p>
 
-<p align="center">
-  <img src="assets/social-banner.png" alt="ClassicVoice Banner" width="640">
-</p>
+<p align="center"><a href="README.en.md">English</a> · <a href="https://github.com/smouj/classicvoice/releases/latest">Descargar para Windows</a></p>
 
-ClassicVoice is a tiny local-first desktop utility for classic synthetic Spanish speech. It provides a clean UI over eSpeak NG with a small set of useful presets and direct control over speed, pitch and volume.
+ClassicVoice convierte texto en voz sintética en español usando **eSpeak NG**. Escribe, ajusta una voz, escucha una vista previa y guarda el resultado como WAV desde una aplicación de escritorio para Windows.
 
-ClassicVoice is **not Loquendo**, does not include proprietary Loquendo voices and does not attempt to redistribute them.
+**Todo el procesamiento de voz se realiza localmente.** La aplicación no requiere cuenta, clave API, conexión a Internet ni modelos de IA.
 
-## Features
+> ClassicVoice ofrece voces sintéticas clásicas. No incluye ni imita las voces propietarias de Loquendo.
 
-- Text-to-speech entirely on the local machine
-- Four Spanish-oriented starter presets
-- Speed, pitch and volume controls
-- Instant WAV preview
-- WAV export
-- No accounts, APIs, cloud services or telemetry
-- Standard-library-only Python UI
+## Instalar en Windows
 
-## Requirements
+1. Descarga `ClassicVoice-<versión>-windows-x64.zip` desde [Releases](https://github.com/smouj/classicvoice/releases/latest).
+2. Extrae el ZIP en una carpeta de tu elección.
+3. Abre esa carpeta y haz doble clic en **Install-ClassicVoice.bat**.
+4. ClassicVoice quedará disponible en el escritorio y en el menú Inicio. El instalador es por usuario y no necesita permisos de administrador.
 
-- Windows 10/11
-- Python 3.11+
-- eSpeak NG installed on `PATH`, or a compatible local installation made available under `bin/`
+El paquete contiene la aplicación, el motor de voz eSpeak NG y sus avisos de licencia. No necesitas instalar Python. También puedes ejecutar `ClassicVoice\ClassicVoice.exe` directamente desde la carpeta extraída para probar la versión portátil.
 
-> eSpeak NG distributions often require more than a single executable (voice data and DLLs). Keep the complete compatible distribution together when bundling it.
+Consulta la [guía de instalación y actualización](docs/INSTALACION.md) si necesitas más detalle o ayuda para desinstalar.
 
-## Run
+## Uso rápido
+
+1. Escribe o pega el texto en el editor.
+2. Elige uno de los cuatro presets y ajusta velocidad, tono y volumen.
+3. Pulsa **Escuchar** para previsualizar la voz; **Detener** interrumpe el audio.
+4. Pulsa **Guardar WAV** y elige el nombre y la ubicación del archivo.
+
+Puedes crear reglas de pronunciación y normalizar el volumen antes de guardar. Los ajustes se recuerdan para la próxima vez. La [guía de uso](docs/GUIA_DE_USO.md) explica cada control y resuelve problemas frecuentes.
+
+## Qué incluye
+
+- Cuatro presets sintéticos de español y controles independientes de velocidad, tono y volumen.
+- Interfaz que sigue respondiendo mientras sintetiza, con controles de previsualización y detención.
+- Exportación WAV validada y normalización de pico opcional.
+- Reglas de reemplazo de pronunciación y guardado de preferencias por usuario.
+- Paquete de escritorio con eSpeak NG y datos de voz incluidos.
+- Código de la aplicación basado en la biblioteca estándar de Python; PyInstaller solo se utiliza para crear el paquete de Windows.
+
+## Privacidad y licencias
+
+La aplicación instalada no realiza solicitudes de red. La descarga de eSpeak NG solo ocurre durante la compilación del paquete, desde su publicación oficial y con una comprobación SHA-256 fijada. ClassicVoice usa licencia MIT; eSpeak NG conserva su licencia GPL-3.0-or-later y sus avisos y código fuente se incluyen en el paquete. Consulta [THIRD_PARTY.md](THIRD_PARTY.md).
+
+## Compilar desde el código
+
+Requisitos para crear la versión de escritorio: Windows x64, Python 3.11 y PowerShell.
 
 ```powershell
-python -m pip install -e .
-python -m classicvoice
+.\tools\build_windows.ps1
 ```
 
-## Product scope
+Para compilar, instalar en el perfil actual y verificar la exportación WAV:
 
-The v0.1 contract is intentionally narrow:
+```powershell
+.\tools\build_windows.ps1 -Install
+```
 
-`Write → Choose/tune voice → Preview → Save WAV`
+Para desarrollar la aplicación sin crear el ejecutable:
 
-No timeline, AI model downloads, cloud synthesis, characters, project database or audio workstation features are part of v0.1.
+```powershell
+py -3.11 -m pip install -e ".[test]"
+py -3.11 -m classicvoice
+py -3.11 -m pytest
+```
 
-## Privacy
+La primera compilación descarga el MSI oficial de eSpeak NG 1.52.0, comprueba su hash y extrae los archivos sin instalar el motor para todo Windows.
 
-ClassicVoice performs synthesis locally and makes no network requests.
+## Proyecto
 
-## License
+- [Cambios por versión](CHANGELOG.md) · [Alcance](docs/SCOPE.md) · [Arquitectura](docs/ARCHITECTURE.md) · [Contribuir](CONTRIBUTING.md) · [Seguridad](SECURITY.md)
+- Problemas y propuestas: [GitHub Issues](https://github.com/smouj/classicvoice/issues)
+- Código: [smouj/classicvoice](https://github.com/smouj/classicvoice)
 
-ClassicVoice source code is MIT licensed. eSpeak NG is a separate GPL-licensed project and is not redistributed by this repository. See [THIRD_PARTY.md](THIRD_PARTY.md).
+<p align="center">Creado con cuidado por <a href="https://github.com/smouj">smouj</a> · ClassicVoice 0.2.0 · MIT</p>

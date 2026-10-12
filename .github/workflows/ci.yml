@@ -2,17 +2,30 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   test:
+    name: Tests (Windows, Python 3.11)
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Check out source
+        uses: actions/checkout@v7
+      - name: Set up Python
+        uses: actions/setup-python@v6
         with:
-          python-version: "3.13"
-      - run: python -m pip install -U pip pytest
-      - run: python -m pip install -e .
-      - run: python -m pytest -q
-      - run: python -m compileall -q src
+          python-version: '3.11'
+      - name: Install test dependencies
+        run: python -m pip install -e '.[test]'
+      - name: Compile source
+        run: python -m compileall -q src tests
+      - name: Run tests
+        run: python -m pytest -q
+      - name: Smoke-test desktop window
+        run: python tools/smoke_ui.py

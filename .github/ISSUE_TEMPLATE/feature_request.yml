@@ -1,17 +1,26 @@
-name: Feature request
-description: Propose a focused local TTS improvement.
-title: "feat: "
+name: Proponer una mejora
+description: Sugiere una mejora concreta para ClassicVoice.
+title: "feature: "
 labels: [enhancement]
 body:
   - type: textarea
-    id: need
+    id: problem
     attributes:
-      label: Problem to solve
+      label: Necesidad
+      description: ¿Qué tarea te cuesta hacer con ClassicVoice?
     validations:
       required: true
   - type: textarea
-    id: scope
+    id: solution
     attributes:
-      label: Minimal proposed solution
+      label: Propuesta
+      description: Describe cómo debería ayudarte la mejora.
     validations:
       required: true
+  - type: checkboxes
+    id: boundaries
+    attributes:
+      label: Alcance del producto
+      options:
+        - label: Entiendo que ClassicVoice prioriza la síntesis local y el flujo texto a voz WAV.
+          required: true
