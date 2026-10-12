@@ -2,6 +2,15 @@
 
 Los cambios notables de ClassicVoice se documentan aquí. Las versiones siguen [Semantic Versioning](https://semver.org/).
 
+## [0.2.1] - 2026-10-12
+
+- Distribución adaptable con desplazamiento vertical y controles accesibles al reducir la ventana.
+- Carpeta de salida, normalización y pronunciación distribuidas en filas independientes.
+- Estado y descripciones con ajuste de línea; diálogo de pronunciación con barra de desplazamiento.
+- Corrección de la vista previa: el WAV se conserva hasta finalizar o detener la reproducción.
+- Atajos Ctrl + A y Esc, guardado bloqueado durante la síntesis y eliminación del placeholder del historial de deshacer.
+- Comprobaciones de geometría y ausencia de solapamientos en tres tamaños de ventana.
+
 ## [0.2.0] - 2026-10-12
 
 - Aplicación de escritorio para Windows con instalación por usuario, accesos directos y desinstalador.
@@ -16,5 +25,6 @@ Los cambios notables de ClassicVoice se documentan aquí. Las versiones siguen [
 - Cuatro presets iniciales y controles de velocidad, tono y volumen.
 - Previsualización y exportación WAV.
 
+[0.2.1]: https://github.com/smouj/classicvoice/releases/tag/v0.2.1
 [0.2.0]: https://github.com/smouj/classicvoice/releases/tag/v0.2.0
 [0.1.0-alpha]: https://github.com/smouj/classicvoice/releases/tag/v0.1.0-alpha

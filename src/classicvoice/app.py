@@ -116,7 +116,7 @@ class ClassicVoiceApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("ClassicVoice")
-        self.geometry("900x770")
+        self.geometry("900x820")
         self.minsize(780, 650)
         self.configure(bg=COLORS["canvas"])
         icon_path = APP_DIR / "assets" / "classicvoice.ico"
@@ -136,7 +136,7 @@ class ClassicVoiceApp(tk.Tk):
         selected = next((p for p in PRESETS if p.key == saved_key), PRESETS[0])
 
         self.preset_label = tk.StringVar(value=selected.label)
-        self.speed = tk.IntVar(value=_bounded_int(cfg.get("speed"), selected.speed, 80, 450))
+        self.speed = tk.IntVar(value=_bounded_int(cfg.get("speed"), selected.speed, 80, 300))
         self.pitch = tk.IntVar(value=_bounded_int(cfg.get("pitch"), selected.pitch, 0, 99))
         self.volume = tk.IntVar(value=_bounded_int(cfg.get("volume"), selected.amplitude, 0, 200))
         normalize_value = cfg.get("normalize", True)
@@ -162,6 +162,9 @@ class ClassicVoiceApp(tk.Tk):
         self._playback_after: str | None = None
         self._save_after: str | None = None
         self._placeholder_active = True
+        self._preview_path: Path | None = None
+        self._layout_after: str | None = None
+        self._pronunciation_dialog: tk.Toplevel | None = None
 
         self._configure_style()
         self._build()
@@ -198,15 +201,23 @@ class ClassicVoiceApp(tk.Tk):
         style.configure("Treeview.Heading", font=("Segoe UI", 9, "bold"))
 
     def _build(self) -> None:
-        page = ttk.Frame(self, style="App.TFrame", padding=(26, 22, 26, 18))
-        page.pack(fill="both", expand=True)
+        self._viewport = tk.Canvas(self, bg=COLORS["canvas"], highlightthickness=0)
+        self._page_scrollbar = ttk.Scrollbar(self, orient="vertical", command=self._viewport.yview)
+        self._viewport.configure(yscrollcommand=self._page_scrollbar.set)
+        self._viewport.pack(side="left", fill="both", expand=True)
+        page = ttk.Frame(self._viewport, style="App.TFrame", padding=(26, 22, 26, 18))
+        self._page = page
+        self._page_window = self._viewport.create_window(0, 0, window=page, anchor="nw")
+        self._viewport.bind("<Configure>", self._schedule_layout)
+        page.bind("<Configure>", self._schedule_layout)
 
         header = ttk.Frame(page, style="App.TFrame")
         header.pack(fill="x", pady=(0, 17))
         title_block = ttk.Frame(header, style="App.TFrame")
         title_block.pack(side="left", fill="x", expand=True)
         ttk.Label(title_block, text="ClassicVoice", style="Header.TLabel").pack(anchor="w")
-        ttk.Label(title_block, text="Voz clásica en español, con control total y sin salir de tu PC.", style="Subtitle.TLabel").pack(anchor="w", pady=(2, 0))
+        self._subtitle = ttk.Label(title_block, text="Voz clásica en español, con control total y sin salir de tu PC.", style="Subtitle.TLabel", wraplength=430)
+        self._subtitle.pack(anchor="w", pady=(2, 0))
         engine_label = "Motor de voz listo" if self.engine else "Falta el motor de voz"
         engine_style = "EngineOk.TLabel" if self.engine else "EngineMissing.TLabel"
         ttk.Label(header, text=engine_label, style=engine_style).pack(side="right", anchor="center", padx=(12, 0))
@@ -232,7 +243,7 @@ class ClassicVoiceApp(tk.Tk):
         editor_area.columnconfigure(0, weight=1)
         self.text = tk.Text(
             editor_area,
-            height=11,
+            height=4,
             wrap="word",
             font=("Segoe UI", 11),
             undo=True,
@@ -255,7 +266,8 @@ class ClassicVoiceApp(tk.Tk):
         self.text.configure(yscrollcommand=scrollbar.set)
         self.text.insert("1.0", PLACEHOLDER)
         self.text.edit_modified(False)
-        ttk.Label(editor, text="Consejo: Ctrl + Intro genera una vista previa · Ctrl + S guarda el WAV", style="CardText.TLabel").pack(anchor="w", pady=(7, 0))
+        self._editor_hint = ttk.Label(editor, text="Ctrl + Intro: escuchar · Ctrl + S: guardar WAV · Esc: detener", style="CardText.TLabel", wraplength=650)
+        self._editor_hint.pack(anchor="w", pady=(7, 0))
 
         settings = ttk.Frame(page, style="Card.TFrame", padding=(16, 13))
         settings.pack(fill="x", pady=(14, 0))
@@ -272,7 +284,8 @@ class ClassicVoiceApp(tk.Tk):
             width=23,
         )
         self.preset_combo.pack(side="left")
-        ttk.Label(preset_row, textvariable=self.preset_description, style="CardText.TLabel").pack(side="left", padx=(12, 0))
+        self._preset_hint = ttk.Label(settings, textvariable=self.preset_description, style="CardText.TLabel", wraplength=650)
+        self._preset_hint.pack(anchor="w", pady=(0, 7))
 
         self._slider(settings, "Velocidad", self.speed, 80, 300, "palabras por minuto")
         self._slider(settings, "Tono", self.pitch, 0, 99, "grave a agudo")
@@ -280,12 +293,15 @@ class ClassicVoiceApp(tk.Tk):
 
         output_row = ttk.Frame(settings, style="Card.TFrame")
         output_row.pack(fill="x", pady=(8, 0))
-        ttk.Label(output_row, text="Guardar en", style="CardText.TLabel", width=11).pack(side="left")
-        self.dir_label = ttk.Label(output_row, text=self._short_dir(), style="CardText.TLabel", width=42, anchor="w")
-        self.dir_label.pack(side="left", padx=(0, 5))
-        ttk.Button(output_row, text="Cambiar…", style="Secondary.TButton", command=self._choose_dir).pack(side="left")
-        ttk.Checkbutton(output_row, text="Normalizar volumen", variable=self.normalize_audio).pack(side="left", padx=(16, 0))
-        self.rules_button = ttk.Button(output_row, text=f"Pronunciación · {len(self.pronunciation_rules)}", style="Secondary.TButton", command=self._open_pronunciation)
+        output_row.columnconfigure(1, weight=1)
+        ttk.Label(output_row, text="Guardar en", style="CardText.TLabel", width=11).grid(row=0, column=0, sticky="w")
+        self.dir_label = ttk.Label(output_row, text=self._short_dir(), style="CardText.TLabel", width=1, anchor="w")
+        self.dir_label.grid(row=0, column=1, sticky="ew", padx=(0, 12))
+        ttk.Button(output_row, text="Cambiar…", style="Secondary.TButton", command=self._choose_dir).grid(row=0, column=2, sticky="e")
+        options_row = ttk.Frame(settings, style="Card.TFrame")
+        options_row.pack(fill="x", pady=(8, 0))
+        ttk.Checkbutton(options_row, text="Normalizar volumen", variable=self.normalize_audio).pack(side="left")
+        self.rules_button = ttk.Button(options_row, text=f"Pronunciación · {len(self.pronunciation_rules)}", style="Secondary.TButton", command=self._open_pronunciation)
         self.rules_button.pack(side="right")
 
         actions = ttk.Frame(page, style="App.TFrame")
@@ -299,8 +315,29 @@ class ClassicVoiceApp(tk.Tk):
 
         footer = ttk.Frame(page, style="App.TFrame")
         footer.pack(fill="x")
-        ttk.Label(footer, textvariable=self.status, style="Status.TLabel").pack(side="left")
-        ttk.Label(footer, text=f"Versión {__version__} · Procesamiento local", style="Status.TLabel").pack(side="right")
+        self._status_label = ttk.Label(footer, textvariable=self.status, style="Status.TLabel", wraplength=650)
+        self._status_label.pack(anchor="w", fill="x")
+        ttk.Label(footer, text=f"Versión {__version__} · Procesamiento local", style="Status.TLabel").pack(anchor="w", pady=(4, 0))
+
+    def _schedule_layout(self, _event=None) -> None:
+        if self._layout_after is None and not self._closing:
+            self._layout_after = self.after_idle(self._update_layout)
+
+    def _update_layout(self) -> None:
+        self._layout_after = None
+        width = max(1, self._viewport.winfo_width())
+        height = max(self._page.winfo_reqheight(), self._viewport.winfo_height())
+        self._viewport.itemconfigure(self._page_window, width=width, height=height)
+        self._viewport.configure(scrollregion=(0, 0, width, height))
+        if height > self._viewport.winfo_height():
+            if not self._page_scrollbar.winfo_manager():
+                self._page_scrollbar.pack(side="right", fill="y")
+        else:
+            self._page_scrollbar.pack_forget()
+            self._viewport.yview_moveto(0)
+        for label in (self._editor_hint, self._preset_hint, self._status_label):
+            label.configure(wraplength=max(180, width - 90))
+        self._subtitle.configure(wraplength=max(180, width - 260))
 
     def _slider(self, parent, label: str, variable: tk.IntVar, low: int, high: int, hint: str) -> None:
         row = ttk.Frame(parent, style="Card.TFrame")
@@ -334,12 +371,22 @@ class ClassicVoiceApp(tk.Tk):
         self.text.bind("<<Modified>>", self._on_text_modified)
         self.text.bind("<FocusIn>", self._clear_placeholder)
         self.text.bind("<FocusOut>", self._restore_placeholder)
+        self.text.bind("<Control-a>", self._select_all_text)
+        self.text.bind("<Control-A>", self._select_all_text)
         self.preset_combo.bind("<<ComboboxSelected>>", self._apply_preset)
         self.bind("<Control-Return>", self._hotkey_preview)
         self.bind("<Control-s>", self._hotkey_save)
         self.bind("<Control-S>", self._hotkey_save)
+        self.bind("<Escape>", lambda _event: self._stop())
+        self.bind("<MouseWheel>", self._scroll_page)
+        self.bind("<FocusIn>", self._reveal_focused_control, add="+")
         for variable in (self.speed, self.pitch, self.volume, self.normalize_audio):
             variable.trace_add("write", self._schedule_config_save)
+
+    def _select_all_text(self, _event=None):
+        self._clear_placeholder()
+        self.text.tag_add("sel", "1.0", "end-1c")
+        return "break"
 
     def _clear_placeholder(self, _event=None) -> None:
         if self._placeholder_active:
@@ -347,6 +394,7 @@ class ClassicVoiceApp(tk.Tk):
             self.text.configure(fg=COLORS["text"])
             self._placeholder_active = False
             self.text.edit_modified(False)
+            self.text.edit_reset()
 
     def _restore_placeholder(self, _event=None) -> None:
         if not self.text.get("1.0", "end-1c").strip():
@@ -355,7 +403,29 @@ class ClassicVoiceApp(tk.Tk):
             self.text.configure(fg="#8792a5")
             self._placeholder_active = True
             self.text.edit_modified(False)
+            self.text.edit_reset()
             self._update_count()
+
+    def _scroll_page(self, event) -> None:
+        if event.widget is self.text or not self._page_scrollbar.winfo_manager():
+            return
+        if isinstance(event.widget, tk.Scale):
+            return
+        self._viewport.yview_scroll(-int(event.delta / 120), "units")
+
+    def _reveal_focused_control(self, event) -> None:
+        widget = event.widget
+        if widget.winfo_toplevel() is not self or not self._page_scrollbar.winfo_manager():
+            return
+        top = widget.winfo_rooty() - self._page.winfo_rooty()
+        bottom = top + widget.winfo_height()
+        visible_top = self._viewport.canvasy(0)
+        visible_bottom = visible_top + self._viewport.winfo_height()
+        total = max(1, self._page.winfo_height())
+        if top < visible_top:
+            self._viewport.yview_moveto(max(0, top - 12) / total)
+        elif bottom > visible_bottom:
+            self._viewport.yview_moveto((bottom + 12 - self._viewport.winfo_height()) / total)
 
     def _on_text_modified(self, _event=None) -> None:
         if self.text.edit_modified():
@@ -413,7 +483,7 @@ class ClassicVoiceApp(tk.Tk):
         return {
             "version": 2,
             "preset_key": self._preset().key,
-            "speed": _bounded_int(self.speed.get(), self._preset().speed, 80, 450),
+            "speed": _bounded_int(self.speed.get(), self._preset().speed, 80, 300),
             "pitch": _bounded_int(self.pitch.get(), self._preset().pitch, 0, 99),
             "volume": _bounded_int(self.volume.get(), self._preset().amplitude, 0, 200),
             "normalize": bool(self.normalize_audio.get()),
@@ -441,6 +511,8 @@ class ClassicVoiceApp(tk.Tk):
         self._start_generation("preview", None)
 
     def _save(self) -> None:
+        if self._busy:
+            return
         text = self._text_value()
         if not text:
             messagebox.showinfo("ClassicVoice", "Escribe primero el texto que quieres convertir.", parent=self)
@@ -509,6 +581,10 @@ class ClassicVoiceApp(tk.Tk):
         if mode == "export" and target is None:
             return
 
+        if self._playing:
+            self._stop_playback("Preparando la voz…")
+        self._remove_preview()
+
         self._cancel_event = threading.Event()
         self._busy = True
         self.preview_button.configure(state="disabled")
@@ -535,7 +611,7 @@ class ClassicVoiceApp(tk.Tk):
         temp_dir = Path(tempfile.gettempdir()) / "ClassicVoice"
         input_path: Path | None = None
         working_output: Path | None = None
-        installed_target = False
+        retain_output = False
         try:
             temp_dir.mkdir(parents=True, exist_ok=True)
             job_id = uuid.uuid4().hex
@@ -596,8 +672,10 @@ class ClassicVoiceApp(tk.Tk):
                 normalize_wav(working_output)
             if mode == "export" and target is not None:
                 os.replace(working_output, target)
-                installed_target = True
+                retain_output = True
                 working_output = target
+            else:
+                retain_output = True
             self._events.put(("done", mode, str(working_output), None, duration))
         except InterruptedError:
             self._events.put(("cancelled", mode, None, None, 0.0))
@@ -606,7 +684,7 @@ class ClassicVoiceApp(tk.Tk):
         finally:
             if input_path is not None:
                 input_path.unlink(missing_ok=True)
-            if working_output is not None and not installed_target:
+            if working_output is not None and not retain_output:
                 working_output.unlink(missing_ok=True)
 
     def _poll_events(self) -> None:
@@ -640,6 +718,7 @@ class ClassicVoiceApp(tk.Tk):
         if mode == "export":
             self.status.set(f"WAV guardado correctamente · {Path(path).name}")
             return
+        self._preview_path = Path(path)
         try:
             if os.name == "nt":
                 import winsound
@@ -654,6 +733,7 @@ class ClassicVoiceApp(tk.Tk):
                 self.status.set(f"Vista previa generada · {Path(path).name}")
         except Exception as exc:
             self.status.set("Vista previa generada, pero no se pudo reproducir")
+            self._remove_preview()
             messagebox.showerror("No se pudo reproducir", str(exc), parent=self)
 
     def _playback_finished(self, token: str) -> None:
@@ -664,6 +744,7 @@ class ClassicVoiceApp(tk.Tk):
         self._playback_after = None
         self.stop_button.configure(state="disabled")
         self.status.set("Vista previa terminada")
+        self._remove_preview()
 
     def _stop(self) -> None:
         if self._busy:
@@ -697,9 +778,22 @@ class ClassicVoiceApp(tk.Tk):
             self._playback_after = None
         self.stop_button.configure(state="disabled")
         self.status.set(status)
+        self._remove_preview()
+
+    def _remove_preview(self) -> None:
+        if self._preview_path is not None:
+            try:
+                self._preview_path.unlink(missing_ok=True)
+            except OSError:
+                pass
+            self._preview_path = None
 
     def _open_pronunciation(self) -> None:
+        if self._pronunciation_dialog is not None and self._pronunciation_dialog.winfo_exists():
+            self._pronunciation_dialog.lift()
+            return
         dialog = tk.Toplevel(self)
+        self._pronunciation_dialog = dialog
         dialog.title("Diccionario de pronunciación")
         dialog.geometry("620x500")
         dialog.minsize(540, 430)
@@ -709,21 +803,28 @@ class ClassicVoiceApp(tk.Tk):
         page = ttk.Frame(dialog, style="App.TFrame", padding=20)
         page.pack(fill="both", expand=True)
         ttk.Label(page, text="Pronunciación", style="Header.TLabel").pack(anchor="w")
-        ttk.Label(
+        description = ttk.Label(
             page,
             text="Sustituye palabras o frases por su lectura hablada. Los cambios se aplican al generar el audio; tu texto permanece intacto.",
             style="Subtitle.TLabel",
             wraplength=560,
-        ).pack(anchor="w", pady=(5, 12))
+        )
+        description.pack(anchor="w", fill="x", pady=(5, 12))
+        page.bind("<Configure>", lambda event: description.configure(wraplength=max(200, event.width - 40)))
 
         table_card = ttk.Frame(page, style="Card.TFrame", padding=8)
         table_card.pack(fill="both", expand=True)
-        tree = ttk.Treeview(table_card, columns=("source", "spoken"), show="headings", selectmode="browse")
+        tree = ttk.Treeview(table_card, columns=("source", "spoken"), show="headings", selectmode="browse", height=3)
         tree.heading("source", text="Texto escrito")
         tree.heading("spoken", text="Se pronuncia como")
-        tree.column("source", width=230, anchor="w")
-        tree.column("spoken", width=290, anchor="w")
-        tree.pack(fill="both", expand=True)
+        table_card.rowconfigure(0, weight=1)
+        table_card.columnconfigure(0, weight=1)
+        tree.column("source", width=180, minwidth=80, anchor="w")
+        tree.column("spoken", width=220, minwidth=80, anchor="w")
+        tree.grid(row=0, column=0, sticky="nsew")
+        table_scroll = ttk.Scrollbar(table_card, orient="vertical", command=tree.yview)
+        table_scroll.grid(row=0, column=1, sticky="ns")
+        tree.configure(yscrollcommand=table_scroll.set)
 
         fields = ttk.Frame(page, style="App.TFrame")
         fields.pack(fill="x", pady=(12, 6))
@@ -798,6 +899,7 @@ class ClassicVoiceApp(tk.Tk):
         dialog.grab_set()
         source_entry.focus_set()
         self.wait_window(dialog)
+        self._pronunciation_dialog = None
 
     def _close(self) -> None:
         if self._closing:
@@ -813,6 +915,7 @@ class ClassicVoiceApp(tk.Tk):
                         pass
         if self._playing:
             self._stop_playback("")
+        self._remove_preview()
         if self._save_after:
             try:
                 self.after_cancel(self._save_after)

@@ -33,7 +33,9 @@ Pulsa **Pronunciación** para asociar una palabra o frase a la forma que debe le
 
 Pulsa **Escuchar** para sintetizar una previsualización local. La interfaz permanece disponible mientras trabaja. Pulsa **Detener** si quieres cancelar la síntesis o parar la reproducción.
 
-Atajos: **Ctrl + Intro** para previsualizar y **Ctrl + S** para iniciar el guardado WAV.
+Atajos: **Ctrl + Intro** para previsualizar, **Ctrl + S** para iniciar el guardado WAV, **Ctrl + A** para seleccionar el texto y **Esc** para detener la síntesis o reproducción. El guardado permanece bloqueado mientras se está generando audio.
+
+Si la ventana tiene poca altura, utiliza la barra de desplazamiento de la derecha para acceder a los controles inferiores. También puedes usar la rueda fuera del editor o recorrer los controles con **Tab**; el control enfocado se desplaza a la zona visible.
 
 ## 5. Guardar el archivo
 

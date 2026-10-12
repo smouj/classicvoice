@@ -80,4 +80,4 @@ The first build downloads the official eSpeak NG 1.52.0 MSI, verifies its hash, 
 - Issues and feature requests: [GitHub Issues](https://github.com/smouj/classicvoice/issues)
 - Source: [smouj/classicvoice](https://github.com/smouj/classicvoice)
 
-<p align="center">Made with care by <a href="https://github.com/smouj">smouj</a> · ClassicVoice 0.2.0 · MIT</p>
+<p align="center">Made with care by <a href="https://github.com/smouj">smouj</a> · ClassicVoice 0.2.1 · MIT</p>

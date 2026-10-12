@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "classicvoice"
-version = "0.2.0"
+version = "0.2.1"
 description = "Local-first Spanish text-to-speech desktop app with classic eSpeak NG voices."
 readme = "README.md"
 requires-python = ">=3.11"

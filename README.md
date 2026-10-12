@@ -40,7 +40,7 @@ Consulta la [guía de instalación y actualización](docs/INSTALACION.md) si nec
 3. Pulsa **Escuchar** para previsualizar la voz; **Detener** interrumpe el audio.
 4. Pulsa **Guardar WAV** y elige el nombre y la ubicación del archivo.
 
-Puedes crear reglas de pronunciación y normalizar el volumen antes de guardar. Los ajustes se recuerdan para la próxima vez. La [guía de uso](docs/GUIA_DE_USO.md) explica cada control y resuelve problemas frecuentes.
+Puedes crear reglas de pronunciación y normalizar el volumen antes de guardar. Los ajustes se recuerdan para la próxima vez. Usa **Ctrl + A** para seleccionar todo el texto y **Esc** para detener la voz. En ventanas pequeñas aparece una barra de desplazamiento para acceder a todos los controles. La [guía de uso](docs/GUIA_DE_USO.md) explica cada control y resuelve problemas frecuentes.
 
 ## Qué incluye
 
@@ -85,4 +85,4 @@ La primera compilación descarga el MSI oficial de eSpeak NG 1.52.0, comprueba s
 - Problemas y propuestas: [GitHub Issues](https://github.com/smouj/classicvoice/issues)
 - Código: [smouj/classicvoice](https://github.com/smouj/classicvoice)
 
-<p align="center">Creado con cuidado por <a href="https://github.com/smouj">smouj</a> · ClassicVoice 0.2.0 · MIT</p>
+<p align="center">Creado con cuidado por <a href="https://github.com/smouj">smouj</a> · ClassicVoice 0.2.1 · MIT</p>
