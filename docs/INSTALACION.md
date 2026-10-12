@@ -20,7 +20,7 @@ No se instala nada para otros usuarios del PC y no se cambia la configuración g
 Cada Release incluye un archivo `.sha256`. Para verificarlo con PowerShell, abre PowerShell en la carpeta donde descargaste el ZIP y ejecuta:
 
 ```powershell
-Get-FileHash .\ClassicVoice-0.3.1-windows-x64.zip -Algorithm SHA256
+Get-FileHash .\ClassicVoice-0.4.0-windows-x64.zip -Algorithm SHA256
 ```
 
 Compara el campo `Hash` con la línea del archivo `.sha256` que corresponde a ese ZIP. Usa únicamente los archivos publicados en [Releases](https://github.com/smouj/classicvoice/releases).

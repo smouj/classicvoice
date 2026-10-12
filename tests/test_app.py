@@ -108,7 +108,7 @@ def test_legacy_spanish_rules_survive_config_migration(app, monkeypatch):
     try:
         assert migrated.pronunciation_rules == {"WAV": "uve doble a uve"}
         config = migrated._config_values()
-        assert config["version"] == 3
+        assert config["version"] == 5
         assert config["pronunciation_by_language"]["es"]["WAV"] == "uve doble a uve"
     finally:
         migrated._close()
@@ -174,3 +174,129 @@ def test_pronunciation_dialog_fits_minimum_size(app):
     app.after(30, inspect_and_close)
     app._open_pronunciation()
     assert not errors, errors
+
+
+def test_workflow_dialogs_fit_compact_sizes(app):
+    errors = []
+
+    app._open_batch_dialog()
+    batch = app._batch_dialog
+    batch.geometry("600x430")
+    batch.update()
+    try:
+        assert_contained(batch)
+    except AssertionError as exc:
+        errors.append(exc)
+    batch.destroy()
+
+    app._open_voice_profiles()
+    profiles = app._voice_profile_dialog
+    profiles.geometry("480x360")
+    profiles.update()
+    try:
+        assert_contained(profiles)
+    except AssertionError as exc:
+        errors.append(exc)
+    profiles.destroy()
+    assert not errors, errors
+
+
+def test_natural_engine_switch_preserves_classic_preset_and_disables_unsupported_controls(app, monkeypatch):
+    monkeypatch.setattr(ui, "kokoro_runtime_available", lambda: True)
+    app._apply_preset()
+    original_preset = app._classic_preset_key
+    app._set_tts_engine("kokoro")
+
+    assert app.tts_engine == "kokoro"
+    assert app._language_code == "es"
+    assert app.natural_voice == "ef_dora"
+    assert app.preset_combo.cget("values") == ("Dora · femenina", "Alex · masculina", "Santa · masculina")
+    assert all(control.instate(["disabled"]) for control in app._pitch_controls + app._volume_controls)
+    assert app._config_values()["tts_engine"] == "kokoro"
+
+    app._set_tts_engine("espeak")
+    assert app._classic_preset_key == original_preset
+    assert all(control.instate(["!disabled"]) for control in app._pitch_controls + app._volume_controls)
+
+
+def test_natural_voice_reset_returns_to_the_default_voice_and_normal_speed(app, monkeypatch):
+    monkeypatch.setattr(ui, "kokoro_runtime_available", lambda: True)
+    app._set_tts_engine("kokoro")
+    app.preset_label.set("Alex · masculina")
+    app._apply_preset()
+    app.speed.set(210)
+
+    app._reset_voice()
+
+    assert app.natural_voice == "ef_dora"
+    assert app.speed.get() == 145
+    assert app.preset_label.get() == "Dora · femenina"
+
+
+def test_natural_engine_dialog_fits_compact_size(app, monkeypatch):
+    monkeypatch.setattr(ui, "kokoro_runtime_available", lambda: True)
+    errors = []
+    app._open_tts_settings()
+    dialog = app._natural_settings_dialog
+    dialog.geometry("500x365")
+    dialog.update()
+    try:
+        assert_contained(dialog)
+    except AssertionError as exc:
+        errors.append(exc)
+    dialog.destroy()
+    assert not errors, errors
+
+
+def test_batch_render_is_atomic_and_combines_book_chapters(app, monkeypatch, tmp_path):
+    source = tmp_path / "Libro.txt"
+    source.write_text("Capítulo 1\nHola mundo\n\nCapítulo 2\nOtro capítulo", encoding="utf-8")
+    output_dir = tmp_path / "Audio"
+    existing = output_dir / "Libro - Capítulo 1.wav"
+    output_dir.mkdir()
+    existing.write_bytes(b"contenido original")
+
+    def fake_synthesis(_engine, _app_dir, _text, output, _preset, _settings, _cancel, _on_process):
+        with wave.open(str(output), "wb") as audio:
+            audio.setnchannels(1)
+            audio.setsampwidth(2)
+            audio.setframerate(8_000)
+            audio.writeframes(b"\x01\x00" * 8)
+        return 0.001
+
+    monkeypatch.setattr(ui, "synthesize_text_to_wav", fake_synthesis)
+    monkeypatch.setattr(ui, "APP_DIR", tmp_path)
+    app.engine = "unused-by-fake"
+    settings = {"speed": 145, "pitch": 45, "volume": 100, "normalize": False, "language": None}
+    app._run_batch_generation((source,), output_dir, True, app._preset(), settings, {}, app._cancel_event)
+    events = []
+    while not app._events.empty():
+        events.append(app._events.get_nowait())
+
+    result = next(event for event in events if event[0] == "batch_done")
+    paths = [Path(value) for value in result[1]]
+    assert len(paths) == 3, events
+    assert result[2] and Path(result[2]).is_file()
+    assert existing.read_bytes() == b"contenido original"
+    assert all(path.is_file() for path in paths)
+    assert not list(output_dir.glob(".classicvoice-batch-*"))
+
+
+def test_cancelled_batch_removes_staged_outputs(app, monkeypatch, tmp_path):
+    source = tmp_path / "Libro.txt"
+    source.write_text("Capítulo 1\nTexto", encoding="utf-8")
+    output_dir = tmp_path / "Audio"
+
+    def cancel_synthesis(_engine, _app_dir, _text, _output, _preset, _settings, cancel, _on_process):
+        cancel.set()
+        raise ui.SynthesisCancelled("cancelled")
+
+    monkeypatch.setattr(ui, "synthesize_text_to_wav", cancel_synthesis)
+    monkeypatch.setattr(ui, "APP_DIR", tmp_path)
+    app.engine = "unused-by-fake"
+    settings = {"speed": 145, "pitch": 45, "volume": 100, "normalize": False, "language": None}
+    app._run_batch_generation((source,), output_dir, True, app._preset(), settings, {}, app._cancel_event)
+
+    assert app._events.get_nowait() == ("batch_total", 1)
+    assert app._events.get_nowait() == ("batch_cancelled",)
+    assert list(output_dir.iterdir()) == []

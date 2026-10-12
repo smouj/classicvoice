@@ -22,7 +22,15 @@ $buildRoot = Join-Path $repoRoot 'dist\ClassicVoice'
 if (-not (Test-Path -LiteralPath (Join-Path $buildRoot 'ClassicVoice.exe'))) {
     throw "ClassicVoice.exe is missing from the build folder: $buildRoot"
 }
-foreach ($requiredFile in @('THIRD_PARTY.md', 'licenses\eSpeak-NG-COPYING.txt', 'licenses\espeak-ng-1.52.0-source.zip')) {
+foreach ($requiredFile in @(
+    'THIRD_PARTY.md',
+    'licenses\eSpeak-NG-COPYING.txt',
+    'licenses\espeak-ng-1.52.0-source.zip',
+    'licenses\Kokoro-82M-Apache-2.0.txt',
+    'licenses\phonemizer-GPL-3.0.txt',
+    'licenses\phonemizer-3.4.0-source.tar.gz',
+    'licenses\onnxruntime-ThirdPartyNotices.txt'
+)) {
     $buildFile = if ($requiredFile -eq 'THIRD_PARTY.md') {
         Join-Path $buildRoot '_internal\licenses\THIRD_PARTY.md'
     }
@@ -76,6 +84,10 @@ Consulta THIRD_PARTY.md para las licencias incluidas.
             "ClassicVoice-$Version/ClassicVoice/ClassicVoice.exe",
             "ClassicVoice-$Version/ClassicVoice/_internal/licenses/eSpeak-NG-COPYING.txt",
             "ClassicVoice-$Version/ClassicVoice/_internal/licenses/espeak-ng-1.52.0-source.zip",
+            "ClassicVoice-$Version/ClassicVoice/_internal/licenses/Kokoro-82M-Apache-2.0.txt",
+            "ClassicVoice-$Version/ClassicVoice/_internal/licenses/phonemizer-GPL-3.0.txt",
+            "ClassicVoice-$Version/ClassicVoice/_internal/licenses/phonemizer-3.4.0-source.tar.gz",
+            "ClassicVoice-$Version/ClassicVoice/_internal/licenses/onnxruntime-ThirdPartyNotices.txt",
             "ClassicVoice-$Version/Install-ClassicVoice.bat",
             "ClassicVoice-$Version/Install-ClassicVoice.ps1",
             "ClassicVoice-$Version/Uninstall-ClassicVoice.ps1"

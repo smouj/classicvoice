@@ -19,4 +19,4 @@ As a Windows user, I can enter text, select a supported language and tune a clas
 11. The editor and tabbed voice/output controls fit the supported window sizes without page scrolling, clipping or overlaps.
 12. TXT import supports UTF-8 and UTF-16 and can be undone; the source file is unchanged.
 
-ClassicVoice remains a focused synthetic voice utility. Natural-voice models, cloud synthesis, timeline editing and batch dialogue export require a separate product decision.
+ClassicVoice supports classic eSpeak NG and an optional local Kokoro neural voice mode, plus chapter-based batch export and reusable voice profiles. Cloud synthesis, voice cloning, transcription, video dubbing and timeline editing are outside the current product scope.

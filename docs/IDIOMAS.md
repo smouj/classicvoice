@@ -1,8 +1,8 @@
 # Idiomas y variantes regionales
 
-ClassicVoice 0.3.1 incluye 130 idiomas y variantes nativos de eSpeak NG 1.52.0. El selector de la app se obtiene del motor instalado y excluye las voces que necesitan MBROLA u otros componentes externos.
+ClassicVoice 0.4.0 incluye 130 idiomas y variantes nativos de eSpeak NG 1.52.0 en el motor clásico. El selector se obtiene del motor instalado y excluye las voces que necesitan MBROLA u otros componentes externos. El motor natural Kokoro ofrece voces predefinidas en español, inglés estadounidense y británico, francés, italiano, portugués brasileño, japonés, chino mandarín e hindi.
 
-Selecciona el idioma del texto en la pestaña **Voz**. Los estilos Clásica, Clásica grave, Clásica brillante y Narrador se pueden utilizar con cada opción. La calidad de pronunciación varía por idioma. La app lee el texto en el idioma elegido; no traduce ni detecta automáticamente el idioma.
+Selecciona el motor y el idioma del texto en la pestaña **Voz**. Los estilos Clásica, Clásica grave, Clásica brillante y Narrador corresponden al motor eSpeak NG; Kokoro usa voces neuronales predefinidas por idioma. La calidad de pronunciación y naturalidad varía según el idioma y la voz. La app lee el texto en el idioma elegido; no traduce ni detecta automáticamente el idioma.
 
 Cada opción de esta lista ha generado un WAV PCM válido en la comprobación de la distribución. Esto confirma la disponibilidad técnica de las voces y no constituye una evaluación lingüística de todas sus pronunciaciones.
 

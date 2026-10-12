@@ -25,10 +25,16 @@
 - [x] Numeric controls, voice reset, UTF-8/UTF-16 TXT import and output-folder access
 - [x] Actual desktop screenshots and automated layout checks
 
-## Later, only if justified
+## v0.4 — Natural speech and book workflows
 
-- [ ] Batch dialogue export
+- [x] Optional local Kokoro ONNX voices, separate from eSpeak presets
+- [x] On-demand model download with pinned SHA-256 checks and local license notice
+- [x] CPU-only inference with a two-thread limit and progress/cancel controls
+- [x] Paragraph-aware chapter queue, individual WAVs, and optional merged audiobook
+- [x] Reusable profiles for either engine and screenshots for the natural-voice flow
 - [ ] Subtitle timing helpers
-- [ ] Optional natural-voice mode, separate from the classic presets
+- [ ] Optional GPU acceleration after compatibility and stability checks
+
+Voice cloning, transcription and video dubbing remain out of scope for this focused desktop release.
 
 ClassicVoice remains a focused TTS utility, not a DAW.

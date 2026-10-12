@@ -134,8 +134,28 @@ try {
     if (-not (Test-Path -LiteralPath (Join-Path $repoRoot 'assets\classicvoice.ico'))) {
         throw 'The app icon is missing: assets\classicvoice.ico'
     }
-    if (-not (Test-Path -LiteralPath (Join-Path $repoRoot 'licenses\eSpeak-NG-COPYING.txt'))) {
-        throw 'The eSpeak NG license notice is missing.'
+    foreach ($requiredLicense in @(
+        'eSpeak-NG-COPYING.txt',
+        'espeak-ng-1.52.0-source.zip',
+        'Kokoro-82M-Apache-2.0.txt',
+        'phonemizer-GPL-3.0.txt',
+        'phonemizer-3.4.0-source.tar.gz',
+        'THIRD_PARTY.md'
+    )) {
+        if ($requiredLicense -eq 'THIRD_PARTY.md') {
+            $requiredPath = Join-Path $repoRoot $requiredLicense
+        }
+        else {
+            $requiredPath = Join-Path (Join-Path $repoRoot 'licenses') $requiredLicense
+        }
+        if (-not (Test-Path -LiteralPath $requiredPath)) {
+            throw "A required third-party license/source notice is missing: $requiredPath"
+        }
+    }
+    $phonemizerSource = Join-Path $repoRoot 'licenses\phonemizer-3.4.0-source.tar.gz'
+    $expectedPhonemizerSourceHash = 'E13231980C50BC671EC0466379BA027260AD9D61929952D8AE9665B3D0F251EB'
+    if ((Get-FileHash -Algorithm SHA256 -LiteralPath $phonemizerSource).Hash -ne $expectedPhonemizerSourceHash) {
+        throw 'The phonemizer source archive did not match the published SHA-256.'
     }
 
     $python = Join-Path $repoRoot '.venv\Scripts\python.exe'
@@ -149,7 +169,7 @@ try {
         throw 'The local Python build environment was not created.'
     }
 
-    & $python -m pip install --disable-pip-version-check '-e' '.[build,test]'
+    & $python -m pip install --disable-pip-version-check '-e' '.[build,test,natural]'
     if ($LASTEXITCODE -ne 0) {
         throw 'Build dependencies could not be installed.'
     }
@@ -168,12 +188,13 @@ try {
 
     $engineDirArgument = "$engineRoot;bin\espeak-ng"
     $assetsArgument = "$(Join-Path $repoRoot 'assets');assets"
-    $licenseArgument = "$(Join-Path $repoRoot 'licenses\eSpeak-NG-COPYING.txt');licenses"
-    $sourceArgument = "$(Join-Path $repoRoot 'licenses\espeak-ng-1.52.0-source.zip');licenses"
+    $licensesArgument = "$(Join-Path $repoRoot 'licenses');licenses"
     $readmeLicenseArgument = "$(Join-Path $repoRoot 'THIRD_PARTY.md');licenses"
     $mitLicenseArgument = "$(Join-Path $repoRoot 'LICENSE');licenses"
     $iconArgument = Join-Path $repoRoot 'assets\classicvoice.ico'
     $entryPoint = Join-Path $repoRoot 'src\classicvoice\launcher.py'
+    $specRoot = Join-Path $repoRoot 'build\spec'
+    New-Item -ItemType Directory -Path $specRoot -Force | Out-Null
     $pyinstallerArgs = @(
         '-m', 'PyInstaller',
         '--noconfirm',
@@ -181,14 +202,18 @@ try {
         '--windowed',
         '--onedir',
         '--name', 'ClassicVoice',
+        '--specpath', $specRoot,
         '--icon', $iconArgument,
         '--paths', (Join-Path $repoRoot 'src'),
         '--add-data', $engineDirArgument,
         '--add-data', $assetsArgument,
-        '--add-data', $licenseArgument,
-        '--add-data', $sourceArgument,
+        '--add-data', $licensesArgument,
         '--add-data', $readmeLicenseArgument,
         '--add-data', $mitLicenseArgument,
+        '--collect-all', 'kokoro_onnx',
+        '--collect-all', 'onnxruntime',
+        '--collect-submodules', 'espeakng_loader',
+        '--collect-all', 'phonemizer',
         '--distpath', (Join-Path $repoRoot 'dist'),
         '--workpath', (Join-Path $repoRoot 'build'),
         $entryPoint

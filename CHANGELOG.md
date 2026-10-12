@@ -2,6 +2,15 @@
 
 Los cambios notables de ClassicVoice se documentan aquí. Las versiones siguen [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - 2026-10-12
+
+- Motor neuronal Kokoro ONNX opcional y local, con voces predefinidas en nueve idiomas y descarga bajo demanda verificada por SHA-256.
+- La selección del motor y la voz natural se guardan en los ajustes y perfiles; la instalación usa Kokoro por defecto solo si ya hay un modelo local.
+- Corrección de pausas entre párrafos y fragmentos largos para evitar uniones abruptas en el audio neuronal.
+- Síntesis neuronal CPU limitada a dos hilos, con controles de descarga/cancelación y retirada segura de los archivos del modelo.
+- Flujo por lotes para libros: importación TXT/Markdown, detección de capítulos, WAV por capítulo y combinación opcional.
+- Avisos de licencias y código fuente de las dependencias GPL incluidos en el paquete; documentación y capturas del motor natural.
+
 ## [0.3.1] - 2026-10-12
 
 - Logo del README visible en temas claros y oscuros, conservando el diseño original.
@@ -48,6 +57,7 @@ Los cambios notables de ClassicVoice se documentan aquí. Las versiones siguen [
 - Cuatro presets iniciales y controles de velocidad, tono y volumen.
 - Previsualización y exportación WAV.
 
+[0.4.0]: https://github.com/smouj/classicvoice/releases/tag/v0.4.0
 [0.3.1]: https://github.com/smouj/classicvoice/releases/tag/v0.3.1
 [0.3.0]: https://github.com/smouj/classicvoice/releases/tag/v0.3.0
 [0.2.2]: https://github.com/smouj/classicvoice/releases/tag/v0.2.2

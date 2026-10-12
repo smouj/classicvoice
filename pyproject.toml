@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "classicvoice"
-version = "0.3.1"
-description = "Offline multilingual text-to-speech desktop app with classic eSpeak NG voices and WAV export."
+version = "0.4.0"
+description = "Offline multilingual text-to-speech desktop app with classic and natural voices, chapter workflows, and WAV export."
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
@@ -27,6 +27,22 @@ classicvoice = "classicvoice.app:main"
 [project.optional-dependencies]
 build = ["pyinstaller>=6.13,<7"]
 test = ["pytest>=8,<9"]
+natural = [
+  "kokoro-onnx==0.6.1",
+  "espeakng-loader==0.2.4",
+  "numpy==2.4.6",
+  "onnxruntime==1.31.0",
+  "phonemizer==3.4.0",
+  "flatbuffers==25.12.19",
+  "packaging==26.3",
+  "protobuf==7.36.2",
+  "attrs==26.1.0",
+  "cffi==2.1.1",
+  "cloudpickle==3.1.2",
+  "dlinfo==2.0.0",
+  "joblib==1.6.0",
+  "typing_extensions==4.16.0",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
