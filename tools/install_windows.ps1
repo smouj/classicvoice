@@ -102,7 +102,7 @@ foreach ($shortcutPath in @(
     $shortcut.TargetPath = $installedExe
     $shortcut.WorkingDirectory = $installRoot
     $shortcut.IconLocation = "$installedExe,0"
-    $shortcut.Description = 'Texto a voz clásico en español'
+    $shortcut.Description = 'Texto a voz local en varios idiomas'
     $shortcut.Save()
 }
 

@@ -1,6 +1,6 @@
-<table align="center" bgcolor="#151722"><tr><td align="center">
-  <img src="assets/logo.png" alt="Logotipo de ClassicVoice" width="220">
-</td></tr></table>
+<p align="center">
+  <img src="assets/logo-readme.svg" alt="Logotipo de ClassicVoice" width="220">
+</p>
 
 <h1 align="center">ClassicVoice</h1>
 
@@ -116,4 +116,4 @@ La primera compilación descarga el MSI oficial de eSpeak NG 1.52.0, comprueba s
 - Problemas y propuestas: [GitHub Issues](https://github.com/smouj/classicvoice/issues)
 - Código: [smouj/classicvoice](https://github.com/smouj/classicvoice)
 
-<p align="center">Creado por <a href="https://github.com/smouj">smouj</a> · ClassicVoice 0.3.0 · MIT</p>
+<p align="center">Creado por <a href="https://github.com/smouj">smouj</a> · ClassicVoice 0.3.1 · MIT</p>

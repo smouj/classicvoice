@@ -34,5 +34,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Windows package creation failed.' }
           $archive = Join-Path $env:GITHUB_WORKSPACE "dist\ClassicVoice-$version-windows-x64.zip"
           $checksum = Join-Path $env:GITHUB_WORKSPACE "dist\ClassicVoice-$version-windows-x64.sha256"
-          gh release create $tag $archive $checksum --repo $env:GITHUB_REPOSITORY --title "ClassicVoice $version" --generate-notes --verify-tag
+          $notes = Join-Path $env:RUNNER_TEMP "ClassicVoice-$version-release-notes.md"
+          & .\.venv\Scripts\python.exe .\tools\release_notes.py --version $version --output $notes
+          if ($LASTEXITCODE -ne 0) { throw 'Release notes could not be generated from CHANGELOG.md.' }
+          gh release create $tag $archive $checksum --repo $env:GITHUB_REPOSITORY --title "ClassicVoice $version" --notes-file $notes --verify-tag
           if ($LASTEXITCODE -ne 0) { throw 'GitHub Release creation or asset upload failed.' }

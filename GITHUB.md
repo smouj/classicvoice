@@ -12,8 +12,8 @@
 
 1. Actualiza la versión en `pyproject.toml` y `src/classicvoice/__init__.py`.
 2. Actualiza `CHANGELOG.md` y ejecuta `python -m pytest`.
-3. Integra los cambios en `main` y crea un tag anotado, por ejemplo `git tag -a v0.2.0 -m "ClassicVoice 0.2.0"`.
-4. Publica `main` y el tag. `.github/workflows/release.yml` compila el paquete, adjunta el ZIP y el SHA-256, y genera las notas de GitHub Release.
+3. Integra los cambios en `main` y crea un tag anotado, por ejemplo `git tag -a v0.3.1 -m "ClassicVoice 0.3.1"`.
+4. Publica `main` y el tag. `.github/workflows/release.yml` compila el paquete, adjunta el ZIP y el SHA-256, y genera las notas desde la entrada correspondiente de `CHANGELOG.md`, con instrucciones de instalación y enlaces a las guías.
 5. Revisa la página de Releases, los archivos y el estado de CI antes de anunciar la descarga.
 
 `PUBLISH_GITHUB.ps1` sincroniza `main`, tags y los temas/descripción del repositorio si GitHub CLI está instalado y autenticado. No crea issues.

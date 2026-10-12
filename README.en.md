@@ -1,6 +1,6 @@
-<table align="center" bgcolor="#151722"><tr><td align="center">
-  <img src="assets/logo.png" alt="ClassicVoice logo" width="220">
-</td></tr></table>
+<p align="center">
+  <img src="assets/logo-readme.svg" alt="ClassicVoice logo" width="220">
+</p>
 
 <h1 align="center">ClassicVoice</h1>
 
@@ -111,4 +111,4 @@ The first build downloads the official eSpeak NG 1.52.0 MSI, verifies its hash, 
 - Issues and feature requests: [GitHub Issues](https://github.com/smouj/classicvoice/issues)
 - Source: [smouj/classicvoice](https://github.com/smouj/classicvoice)
 
-<p align="center">Created by <a href="https://github.com/smouj">smouj</a> · ClassicVoice 0.3.0 · MIT</p>
+<p align="center">Created by <a href="https://github.com/smouj">smouj</a> · ClassicVoice 0.3.1 · MIT</p>

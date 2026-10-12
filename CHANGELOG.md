@@ -2,6 +2,13 @@
 
 Los cambios notables de ClassicVoice se documentan aquí. Las versiones siguen [Semantic Versioning](https://semver.org/).
 
+## [0.3.1] - 2026-10-12
+
+- Logo del README visible en temas claros y oscuros, conservando el diseño original.
+- Descripción multilingüe de los accesos directos de Windows.
+- Ejemplos de instalación, formulario de errores, catálogo y capturas sincronizados con la versión publicada.
+- Notas de release generadas desde el changelog, con instrucciones de descarga, instalación y verificación.
+
 ## [0.3.0] - 2026-10-12
 
 - Selector de los 130 idiomas y variantes regionales incluidos en el motor local; las voces externas MBROLA quedan excluidas.
@@ -41,6 +48,7 @@ Los cambios notables de ClassicVoice se documentan aquí. Las versiones siguen [
 - Cuatro presets iniciales y controles de velocidad, tono y volumen.
 - Previsualización y exportación WAV.
 
+[0.3.1]: https://github.com/smouj/classicvoice/releases/tag/v0.3.1
 [0.3.0]: https://github.com/smouj/classicvoice/releases/tag/v0.3.0
 [0.2.2]: https://github.com/smouj/classicvoice/releases/tag/v0.2.2
 [0.2.1]: https://github.com/smouj/classicvoice/releases/tag/v0.2.1

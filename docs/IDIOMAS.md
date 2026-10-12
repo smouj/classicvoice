@@ -1,6 +1,6 @@
 # Idiomas y variantes regionales
 
-ClassicVoice 0.3.0 incluye 130 idiomas y variantes nativos de eSpeak NG 1.52.0. El selector de la app se obtiene del motor instalado y excluye las voces que necesitan MBROLA u otros componentes externos.
+ClassicVoice 0.3.1 incluye 130 idiomas y variantes nativos de eSpeak NG 1.52.0. El selector de la app se obtiene del motor instalado y excluye las voces que necesitan MBROLA u otros componentes externos.
 
 Selecciona el idioma del texto en la pestaña **Voz**. Los estilos Clásica, Clásica grave, Clásica brillante y Narrador se pueden utilizar con cada opción. La calidad de pronunciación varía por idioma. La app lee el texto en el idioma elegido; no traduce ni detecta automáticamente el idioma.
 

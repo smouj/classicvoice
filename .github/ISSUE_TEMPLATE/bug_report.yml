@@ -11,7 +11,7 @@ body:
     id: version
     attributes:
       label: Versión de ClassicVoice
-      placeholder: 0.2.0
+      placeholder: 0.3.1
     validations:
       required: true
   - type: input
@@ -28,6 +28,12 @@ body:
       description: No pegues texto sensible utilizado en la app.
     validations:
       required: true
+  - type: input
+    id: language
+    attributes:
+      label: Idioma y estilo de voz
+      placeholder: Inglés (en-us), Narrador
+      description: Indica las opciones seleccionadas si el problema afecta a la lectura o pronunciación.
   - type: textarea
     id: expected
     attributes:

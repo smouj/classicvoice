@@ -20,7 +20,7 @@ No se instala nada para otros usuarios del PC y no se cambia la configuración g
 Cada Release incluye un archivo `.sha256`. Para verificarlo con PowerShell, abre PowerShell en la carpeta donde descargaste el ZIP y ejecuta:
 
 ```powershell
-Get-FileHash .\ClassicVoice-0.2.0-windows-x64.zip -Algorithm SHA256
+Get-FileHash .\ClassicVoice-0.3.1-windows-x64.zip -Algorithm SHA256
 ```
 
 Compara el campo `Hash` con la línea del archivo `.sha256` que corresponde a ese ZIP. Usa únicamente los archivos publicados en [Releases](https://github.com/smouj/classicvoice/releases).
@@ -54,7 +54,7 @@ Comprueba el dispositivo de salida de Windows y el volumen de la aplicación. Us
 
 ### Una palabra se pronuncia mal
 
-Abre **Pronunciación**, añade el término y su forma hablada, y genera otra vista previa. Las reglas se guardan en tu perfil de usuario.
+Comprueba primero que **Voz → Idioma del texto** coincida con el texto escrito. Después abre **Salida → Pronunciación**, añade el término y su forma hablada, y genera otra vista previa. Las reglas se guardan por idioma en tu perfil de usuario.
 
 ### No puedes actualizar
 
