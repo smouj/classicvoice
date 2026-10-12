@@ -26,7 +26,7 @@ classicvoice = "classicvoice.app:main"
 
 [project.optional-dependencies]
 build = ["pyinstaller>=6.13,<7"]
-test = ["pytest>=8,<9"]
+test = ["pytest>=8,<10"]
 natural = [
   "kokoro-onnx==0.6.1",
   "espeakng-loader==0.2.4",
