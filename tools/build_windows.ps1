@@ -95,7 +95,29 @@ try {
 
     $sourceArchive = Join-Path $repoRoot 'licenses\espeak-ng-1.52.0-source.zip'
     if (-not (Test-Path -LiteralPath $sourceArchive)) {
-        Invoke-WebRequest -Uri 'https://github.com/espeak-ng/espeak-ng/archive/refs/tags/1.52.0.zip' -OutFile $sourceArchive
+        $sourceDownloaded = $false
+        for ($attempt = 1; $attempt -le 3; $attempt++) {
+            try {
+                Invoke-WebRequest `
+                    -Uri 'https://github.com/espeak-ng/espeak-ng/archive/refs/tags/1.52.0.zip' `
+                    -OutFile $sourceArchive `
+                    -TimeoutSec 90
+                $sourceDownloaded = $true
+                break
+            }
+            catch {
+                if (Test-Path -LiteralPath $sourceArchive) {
+                    Remove-Item -LiteralPath $sourceArchive -Force
+                }
+                if ($attempt -eq 3) {
+                    throw "eSpeak NG source download failed after $attempt attempts: $($_.Exception.Message)"
+                }
+                Start-Sleep -Seconds (5 * $attempt)
+            }
+        }
+        if (-not $sourceDownloaded) {
+            throw 'The eSpeak NG source archive could not be downloaded.'
+        }
     }
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $archive = [System.IO.Compression.ZipFile]::OpenRead($sourceArchive)
