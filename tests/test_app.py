@@ -1,5 +1,6 @@
 from pathlib import Path
 import tkinter as tk
+from tkinter import ttk
 import wave
 
 import pytest
@@ -55,6 +56,20 @@ def test_save_shortcut_while_busy_does_not_open_dialog(app, monkeypatch):
     app._busy = True
     app._hotkey_save()
     app._busy = False
+
+
+def test_voice_slider_rounds_to_integer(app):
+    def sliders(widget):
+        for child in widget.winfo_children():
+            if isinstance(child, ttk.Scale):
+                yield child
+            yield from sliders(child)
+
+    speed_slider = next(sliders(app))
+    speed_slider.set(128.8)
+    assert app.speed.get() == 129
+    speed_slider.set(299.8)
+    assert app.speed.get() == 300
 
 
 def test_preview_survives_worker_until_playback_cleanup(app, monkeypatch, tmp_path):

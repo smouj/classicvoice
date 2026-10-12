@@ -22,6 +22,25 @@ ClassicVoice turns text into synthetic Spanish speech with **eSpeak NG**. Type, 
 
 > ClassicVoice provides classic synthetic voices. It does not include or imitate proprietary Loquendo voices.
 
+## App screenshots
+
+The actual ClassicVoice desktop interface on Windows, with sample text and the Narrador preset:
+
+![ClassicVoice editor with sample text and voice controls](assets/screenshots/classicvoice-editor.png)
+
+<details>
+<summary>View the initial screen and pronunciation dictionary</summary>
+
+**Initial screen**
+
+![ClassicVoice initial screen](assets/screenshots/classicvoice-main.png)
+
+**Sample pronunciation rules**
+
+![Pronunciation dictionary with two example rules](assets/screenshots/classicvoice-pronunciation.png)
+
+</details>
+
 ## Install on Windows
 
 1. Download `ClassicVoice-<version>-windows-x64.zip` from [Releases](https://github.com/smouj/classicvoice/releases/latest).
@@ -80,4 +99,4 @@ The first build downloads the official eSpeak NG 1.52.0 MSI, verifies its hash, 
 - Issues and feature requests: [GitHub Issues](https://github.com/smouj/classicvoice/issues)
 - Source: [smouj/classicvoice](https://github.com/smouj/classicvoice)
 
-<p align="center">Made with care by <a href="https://github.com/smouj">smouj</a> · ClassicVoice 0.2.1 · MIT</p>
+<p align="center">Made with care by <a href="https://github.com/smouj">smouj</a> · ClassicVoice 0.2.2 · MIT</p>

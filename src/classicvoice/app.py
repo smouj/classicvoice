@@ -197,6 +197,8 @@ class ClassicVoiceApp(tk.Tk):
         style.map("Stop.TButton", background=[("disabled", "#f2f3f7"), ("active", "#fff0f0")])
         style.configure("TCombobox", padding=8, fieldbackground=COLORS["card"], background=COLORS["card"], foreground=COLORS["text"])
         style.configure("TCheckbutton", background=COLORS["card"], foreground=COLORS["text"], font=("Segoe UI", 9))
+        style.configure("Voice.Horizontal.TScale", background=COLORS["accent"], troughcolor="#e8eaf3", bordercolor=COLORS["accent"], lightcolor=COLORS["accent"], darkcolor=COLORS["accent"], arrowcolor="#ffffff")
+        style.map("Voice.Horizontal.TScale", background=[("active", COLORS["accent_hover"])])
         style.configure("Treeview", rowheight=30, font=("Segoe UI", 9), background=COLORS["card"], fieldbackground=COLORS["card"])
         style.configure("Treeview.Heading", font=("Segoe UI", 9, "bold"))
 
@@ -343,23 +345,14 @@ class ClassicVoiceApp(tk.Tk):
         row = ttk.Frame(parent, style="Card.TFrame")
         row.pack(fill="x", pady=1)
         ttk.Label(row, text=label, style="CardText.TLabel", width=11).pack(side="left")
-        scale = tk.Scale(
+        scale = ttk.Scale(
             row,
             from_=low,
             to=high,
             variable=variable,
             orient="horizontal",
-            showvalue=False,
-            resolution=1,
-            highlightthickness=0,
-            bd=0,
-            bg=COLORS["card"],
-            fg=COLORS["text"],
-            troughcolor="#e8eaf3",
-            activebackground=COLORS["accent"],
-            sliderrelief="flat",
-            relief="flat",
-            sliderlength=18,
+            command=lambda value: variable.set(round(float(value))),
+            style="Voice.Horizontal.TScale",
             length=360,
             takefocus=True,
         )
@@ -409,7 +402,7 @@ class ClassicVoiceApp(tk.Tk):
     def _scroll_page(self, event) -> None:
         if event.widget is self.text or not self._page_scrollbar.winfo_manager():
             return
-        if isinstance(event.widget, tk.Scale):
+        if isinstance(event.widget, (tk.Scale, ttk.Scale)):
             return
         self._viewport.yview_scroll(-int(event.delta / 120), "units")
 
@@ -456,6 +449,9 @@ class ClassicVoiceApp(tk.Tk):
 
     def _short_dir(self) -> str:
         value = self._last_dir
+        home = str(Path.home())
+        if value.casefold().startswith((home + os.sep).casefold()):
+            value = "~" + value[len(home):]
         return "…" + value[-38:] if len(value) > 41 else value
 
     def _choose_dir(self) -> None:

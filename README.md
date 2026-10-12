@@ -22,6 +22,25 @@ ClassicVoice convierte texto en voz sintética en español usando **eSpeak NG**.
 
 > ClassicVoice ofrece voces sintéticas clásicas. No incluye ni imita las voces propietarias de Loquendo.
 
+## Capturas de la aplicación
+
+Interfaz real de ClassicVoice en Windows, con texto de ejemplo y el preset Narrador:
+
+![Editor de ClassicVoice con texto de ejemplo y controles de voz](assets/screenshots/classicvoice-editor.png)
+
+<details>
+<summary>Ver la pantalla inicial y el diccionario de pronunciación</summary>
+
+**Pantalla inicial**
+
+![Pantalla inicial de ClassicVoice](assets/screenshots/classicvoice-main.png)
+
+**Reglas de pronunciación de ejemplo**
+
+![Diccionario de pronunciación con dos reglas de ejemplo](assets/screenshots/classicvoice-pronunciation.png)
+
+</details>
+
 ## Instalar en Windows
 
 1. Descarga `ClassicVoice-<versión>-windows-x64.zip` desde [Releases](https://github.com/smouj/classicvoice/releases/latest).
@@ -85,4 +104,4 @@ La primera compilación descarga el MSI oficial de eSpeak NG 1.52.0, comprueba s
 - Problemas y propuestas: [GitHub Issues](https://github.com/smouj/classicvoice/issues)
 - Código: [smouj/classicvoice](https://github.com/smouj/classicvoice)
 
-<p align="center">Creado con cuidado por <a href="https://github.com/smouj">smouj</a> · ClassicVoice 0.2.1 · MIT</p>
+<p align="center">Creado con cuidado por <a href="https://github.com/smouj">smouj</a> · ClassicVoice 0.2.2 · MIT</p>

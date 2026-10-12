@@ -2,6 +2,13 @@
 
 Los cambios notables de ClassicVoice se documentan aquí. Las versiones siguen [Semantic Versioning](https://semver.org/).
 
+## [0.2.2] - 2026-10-12
+
+- Indicadores de velocidad, tono y volumen con mayor contraste y valores enteros.
+- Ruta de salida abreviada con `~` cuando está dentro del perfil del usuario.
+- Tres capturas reales de la interfaz en los README en español e inglés.
+- Herramientas para regenerar las capturas sin modificar las preferencias del usuario.
+
 ## [0.2.1] - 2026-10-12
 
 - Distribución adaptable con desplazamiento vertical y controles accesibles al reducir la ventana.
@@ -25,6 +32,7 @@ Los cambios notables de ClassicVoice se documentan aquí. Las versiones siguen [
 - Cuatro presets iniciales y controles de velocidad, tono y volumen.
 - Previsualización y exportación WAV.
 
+[0.2.2]: https://github.com/smouj/classicvoice/releases/tag/v0.2.2
 [0.2.1]: https://github.com/smouj/classicvoice/releases/tag/v0.2.1
 [0.2.0]: https://github.com/smouj/classicvoice/releases/tag/v0.2.0
 [0.1.0-alpha]: https://github.com/smouj/classicvoice/releases/tag/v0.1.0-alpha
