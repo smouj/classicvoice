@@ -31,7 +31,29 @@ try {
         $msiPath = Join-Path $workRoot 'espeak-ng-1.52.0.msi'
         $extractRoot = Join-Path $workRoot 'extract'
         New-Item -ItemType Directory -Path $extractRoot | Out-Null
-        Invoke-WebRequest -Uri 'https://github.com/espeak-ng/espeak-ng/releases/download/1.52.0/espeak-ng.msi' -OutFile $msiPath
+        $downloadSucceeded = $false
+        for ($attempt = 1; $attempt -le 3; $attempt++) {
+            try {
+                Invoke-WebRequest `
+                    -Uri 'https://github.com/espeak-ng/espeak-ng/releases/download/1.52.0/espeak-ng.msi' `
+                    -OutFile $msiPath `
+                    -TimeoutSec 90
+                $downloadSucceeded = $true
+                break
+            }
+            catch {
+                if (Test-Path -LiteralPath $msiPath) {
+                    Remove-Item -LiteralPath $msiPath -Force
+                }
+                if ($attempt -eq 3) {
+                    throw "eSpeak NG download failed after $attempt attempts: $($_.Exception.Message)"
+                }
+                Start-Sleep -Seconds (5 * $attempt)
+            }
+        }
+        if (-not $downloadSucceeded) {
+            throw 'The verified eSpeak NG MSI could not be downloaded.'
+        }
 
         $expectedHash = '7F673C709EA5DD579D3B5EBB98688CC575328A6AB7438D2BC405B88CEDAEAFB9'
         $actualHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $msiPath).Hash
@@ -41,9 +63,22 @@ try {
 
         $logPath = Join-Path $workRoot 'extract.log'
         $msiexec = Join-Path $env:SystemRoot 'System32\msiexec.exe'
-        & $msiexec /a $msiPath /qn /norestart "TARGETDIR=$extractRoot" /l*v $logPath
-        if ($LASTEXITCODE -ne 0) {
-            throw "eSpeak NG could not be extracted. MSI returned $LASTEXITCODE. Log: $logPath"
+        $msiexecArguments = '/a "{0}" /qn /norestart TARGETDIR="{1}" /L*V "{2}"' -f `
+            $msiPath, $extractRoot, $logPath
+        $msiexecProcess = Start-Process `
+            -FilePath $msiexec `
+            -ArgumentList $msiexecArguments `
+            -Wait `
+            -PassThru `
+            -NoNewWindow
+        if ($msiexecProcess.ExitCode -ne 0) {
+            $logSummary = if (Test-Path -LiteralPath $logPath) {
+                (Get-Content -LiteralPath $logPath -Tail 30) -join [Environment]::NewLine
+            }
+            else {
+                'No Windows Installer log was created.'
+            }
+            throw "eSpeak NG could not be extracted. MSI returned $($msiexecProcess.ExitCode). $logSummary"
         }
         $engineSource = Join-Path $extractRoot 'eSpeak NG'
         if (-not (Test-Path -LiteralPath (Join-Path $engineSource 'espeak-ng.exe')) -or
