@@ -4,7 +4,7 @@
 
 <h1 align="center">ClassicVoice</h1>
 
-<p align="center"><strong>Classic Spanish text to speech. Local, simple, and exported as WAV.</strong></p>
+<p align="center"><strong>Multilingual text to speech. Local, simple, and exported as WAV.</strong></p>
 
 <p align="center">
   <a href="https://github.com/smouj/classicvoice/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/smouj/classicvoice?label=release"></a>
@@ -16,7 +16,9 @@
 
 <p align="center"><a href="README.md">Español</a> · <a href="https://github.com/smouj/classicvoice/releases/latest">Download for Windows</a></p>
 
-ClassicVoice turns text into synthetic Spanish speech with **eSpeak NG**. Type, tune a voice, preview it, and save a WAV file from a focused Windows desktop app.
+ClassicVoice turns text into synthetic speech with **eSpeak NG**. Choose the language of your text, tune a voice, preview it, and save a WAV file from a Windows desktop app.
+
+The current package includes **130 languages and regional variants**. The language selector lists available local voices; see the [language catalog](docs/IDIOMAS.md). The app reads the text in the selected language and does not translate it.
 
 **Speech is processed locally.** No account, API key, internet connection, or AI model is required.
 
@@ -24,7 +26,7 @@ ClassicVoice turns text into synthetic Spanish speech with **eSpeak NG**. Type, 
 
 ## App screenshots
 
-The actual ClassicVoice desktop interface on Windows, with sample text and the Narrador preset:
+The actual ClassicVoice desktop interface on Windows, with English sample text and the Narrador voice style:
 
 ![ClassicVoice editor with sample text and voice controls](assets/screenshots/classicvoice-editor.png)
 
@@ -34,6 +36,14 @@ The actual ClassicVoice desktop interface on Windows, with sample text and the N
 **Initial screen**
 
 ![ClassicVoice initial screen](assets/screenshots/classicvoice-main.png)
+
+**Compact window without page scrolling**
+
+![ClassicVoice at its minimum window size of 860 by 620 pixels](assets/screenshots/classicvoice-compact.png)
+
+**Output settings**
+
+![Output folder, audio normalization and pronunciation settings](assets/screenshots/classicvoice-output.png)
 
 **Sample pronunciation rules**
 
@@ -55,18 +65,20 @@ See the [installation guide](docs/INSTALACION.md) for updates, uninstall steps, 
 ## Quick start
 
 1. Type or paste text into the editor.
-2. Choose one of the four presets and tune speed, pitch, and volume.
+2. In **Voz**, choose the text language and one of the four voice styles. Tune speed, pitch, and volume with the sliders or numeric fields.
 3. Press **Escuchar** to preview. **Detener** stops playback.
 4. Press **Guardar WAV** and choose a file name and location.
 
-You can add pronunciation replacements and optionally normalize the audio peak before saving. Preferences are remembered. The [user guide](docs/GUIA_DE_USO.md) describes every control and common fixes.
+In **Salida**, change or open the output folder, normalize the audio peak, and edit pronunciation rules for the selected language. **Importar TXT** loads UTF-8 or UTF-16 text files. Preferences are remembered. The editor and settings panel resize with the window without page scrolling. The [user guide](docs/GUIA_DE_USO.md) describes every control and common fixes.
 
 ## Features
 
-- Four Spanish synthetic voice presets with independent speed, pitch, and volume controls.
+- Selector for the engine's built-in languages and regional variants.
+- Four synthetic voice styles, sliders, numeric speed/pitch/volume controls and voice reset.
+- Resizable editor, TXT import and voice/output settings tabs.
 - Responsive interface, background synthesis, preview, and stop control.
 - Validated WAV export with optional peak normalization.
-- Pronunciation replacement rules and per-user saved preferences.
+- Pronunciation replacement rules per language and per-user saved preferences.
 - Windows desktop package with the eSpeak NG engine and voice data included.
 - Standard-library application code; PyInstaller is only used to build the Windows package.
 
@@ -99,4 +111,4 @@ The first build downloads the official eSpeak NG 1.52.0 MSI, verifies its hash, 
 - Issues and feature requests: [GitHub Issues](https://github.com/smouj/classicvoice/issues)
 - Source: [smouj/classicvoice](https://github.com/smouj/classicvoice)
 
-<p align="center">Made with care by <a href="https://github.com/smouj">smouj</a> · ClassicVoice 0.2.2 · MIT</p>
+<p align="center">Created by <a href="https://github.com/smouj">smouj</a> · ClassicVoice 0.3.0 · MIT</p>

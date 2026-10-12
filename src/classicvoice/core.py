@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import subprocess
 import sys
 import wave
 
@@ -25,18 +26,71 @@ class VoicePreset:
 
 
 PRESETS: tuple[VoicePreset, ...] = (
-    VoicePreset("classic", "Clásica española", "es+m3", 145, 45, 100, "Voz clásica equilibrada"),
+    VoicePreset("classic", "Clásica", "es+m3", 145, 45, 100, "Voz clásica equilibrada"),
     VoicePreset("deep", "Clásica grave", "es+m3", 132, 30, 110, "Tono más profundo y pausado"),
     VoicePreset("bright", "Clásica brillante", "es+f3", 158, 62, 100, "Tono más agudo y ligero"),
     VoicePreset("narrator", "Narrador", "es+m2", 128, 38, 105, "Lectura más pausada"),
 )
 
 LEGACY_PRESET_LABELS = {
+    "Clásica española": "classic",
     "Classic ES": "classic",
     "Classic ES Grave": "deep",
     "Classic ES Agudo": "bright",
     "Narrador": "narrator",
 }
+
+
+@dataclass(frozen=True)
+class VoiceLanguage:
+    code: str
+    name: str
+    identifier: str
+
+    @property
+    def label(self) -> str:
+        return f"{self.name} · {self.code}"
+
+
+LANGUAGE_NAMES = {
+    "es": "Español", "es-419": "Español (Latinoamérica)",
+    "en-gb": "Inglés (Reino Unido)", "en-us": "Inglés (Estados Unidos)",
+    "fr-fr": "Francés", "de": "Alemán", "it": "Italiano",
+    "pt": "Portugués (Brasil)", "pt-pt": "Portugués (Portugal)",
+    "ca": "Catalán", "eu": "Euskera", "gl": "Gallego",
+    "ar": "Árabe", "ru": "Ruso", "ja": "Japonés", "ko": "Coreano",
+    "cmn": "Chino mandarín", "yue": "Chino cantonés", "hi": "Hindi",
+}
+
+
+def parse_voice_languages(output: str) -> tuple[VoiceLanguage, ...]:
+    """List built-in language voices, excluding external MBROLA backends."""
+    languages: dict[str, VoiceLanguage] = {}
+    for line in output.splitlines():
+        fields = line.split()
+        if len(fields) < 5 or not fields[0].isdigit():
+            continue
+        code, name, identifier = fields[1], fields[3], fields[4].replace("\\", "/")
+        if identifier.startswith("mb/") or not re.fullmatch(r"[a-zA-Z0-9/_-]+", identifier):
+            continue
+        if not re.fullmatch(r"[a-z][a-z0-9-]*", code):
+            continue
+        languages.setdefault(code, VoiceLanguage(code, LANGUAGE_NAMES.get(code, name.replace("_", " ")), identifier))
+    return tuple(sorted(languages.values(), key=lambda language: (language.code != "es", language.name.casefold())))
+
+
+def discover_voice_languages(executable: str | None, app_dir: Path) -> tuple[VoiceLanguage, ...]:
+    if not executable:
+        return ()
+    try:
+        result = subprocess.run(
+            [executable, "--voices"], capture_output=True, timeout=5,
+            encoding="utf-8", errors="replace", env=espeak_environment(app_dir, executable),
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return ()
+    return parse_voice_languages(result.stdout) if result.returncode == 0 else ()
 
 
 def app_resource_dir() -> Path:
@@ -128,18 +182,29 @@ def build_espeak_file_command(
     speed: int | None = None,
     pitch: int | None = None,
     amplitude: int | None = None,
+    language: VoiceLanguage | None = None,
 ) -> list[str]:
     """Build a safe command that reads UTF-8 text from a file, avoiding OS arg limits."""
     s, p, a = _validated_values(preset, speed, pitch, amplitude)
     return [
         executable,
-        "-v", preset.voice,
+        "-v", voice_for_language(preset, language),
         "-s", str(s),
         "-p", str(p),
         "-a", str(a),
+        "-b", "1",
         "-f", str(input_file),
         "-w", str(output),
     ]
+
+
+def voice_for_language(preset: VoicePreset, language: VoiceLanguage | None) -> str:
+    if language is None:
+        return preset.voice
+    if not re.fullmatch(r"[a-zA-Z0-9/_-]+", language.identifier) or language.identifier.startswith("mb/"):
+        raise ValueError("Invalid built-in voice identifier")
+    variant = preset.voice.partition("+")[2]
+    return language.identifier + (f"+{variant}" if variant else "")
 
 
 def build_espeak_command(

@@ -161,6 +161,10 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw 'The ClassicVoice window could not be opened.'
     }
+    & $python (Join-Path $PSScriptRoot 'smoke_languages.py')
+    if ($LASTEXITCODE -ne 0) {
+        throw 'A bundled language could not export a valid WAV.'
+    }
 
     $engineDirArgument = "$engineRoot;bin\espeak-ng"
     $assetsArgument = "$(Join-Path $repoRoot 'assets');assets"

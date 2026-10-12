@@ -14,7 +14,27 @@ from classicvoice.core import (
     normalize_wav,
     resolve_espeak,
     validate_wav,
+    parse_voice_languages,
+    VoiceLanguage,
+    voice_for_language,
 )
+
+
+def test_language_catalog_excludes_external_mbrola():
+    output = "Pty Language Age/Gender VoiceName File\n1 ar --/M arabic-mbrola mb/mb-ar1\n5 ar --/M Arabic sem/ar\n5 es --/M Spanish roa/es\n5 en-us --/M English_(America) gmw/en-US\n5 ar --/M Arabic sem/ar\n"
+    languages = parse_voice_languages(output)
+    assert languages[0].code == "es"
+    assert len(languages) == 3
+    arabic = next(language for language in languages if language.code == "ar")
+    assert voice_for_language(PRESETS[0], arabic) == "sem/ar+m3"
+
+
+def test_language_voice_is_passed_as_a_single_argument(tmp_path):
+    language = VoiceLanguage("en-us", "English", "gmw/en-US")
+    command = build_espeak_file_command("espeak-ng", tmp_path / "text.txt", tmp_path / "voice.wav", PRESETS[2], language=language)
+    assert command[command.index("-v") + 1] == "gmw/en-US+f3"
+    with pytest.raises(ValueError):
+        voice_for_language(PRESETS[0], VoiceLanguage("en", "Invalid", "../outside"))
 
 
 def _write_pcm(path: Path, values: list[int], width: int = 2, rate: int = 24_000) -> None:

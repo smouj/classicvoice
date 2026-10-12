@@ -23,7 +23,7 @@ def main() -> None:
     failures = []
     with patch("classicvoice.app._load_config", return_value={}), patch("classicvoice.app._save_config"):
         app = ClassicVoiceApp()
-        app.geometry("900x820")
+        app.geometry("1100x720")
 
         def capture(title, filename, continuation):
             command = [
@@ -49,14 +49,26 @@ def main() -> None:
 
         def capture_example():
             app._clear_placeholder()
-            app.text.insert("1.0", "Bienvenido a ClassicVoice.\n\nEscribe tu texto, ajusta la voz y escucha una vista previa.\nGuarda el audio en WAV. Todo se procesa en tu ordenador.")
+            app.text.insert("1.0", "Welcome to ClassicVoice.\n\nChoose the language of your text, select a voice style and adjust the settings.\n\nListen to a preview and save your audio as WAV. Everything runs locally on your computer.")
             app._update_count()
+            english = next(language for language in app.languages if language.code == "en-us")
+            app.language_label.set(english.label)
+            app._apply_language()
             app.preset_label.set("Narrador")
             app._apply_preset()
-            app.after(250, lambda: capture("ClassicVoice", "classicvoice-editor.png", capture_dictionary))
+            app.after(250, lambda: capture("ClassicVoice", "classicvoice-editor.png", capture_compact))
+
+        def capture_compact():
+            app.geometry("860x620")
+            app.after(250, lambda: capture("ClassicVoice", "classicvoice-compact.png", capture_output))
+
+        def capture_output():
+            app.geometry("1100x720")
+            app.settings_tabs.select(1)
+            app.after(250, lambda: capture("ClassicVoice", "classicvoice-output.png", capture_dictionary))
 
         def capture_dictionary():
-            app.pronunciation_rules = {"ClassicVoice": "Clásic Vois", "WAV": "uve doble a uve"}
+            app.pronunciation_rules = {"ClassicVoice": "Classic Voice", "WAV": "wave"}
 
             def ready():
                 capture("Diccionario de pronunciación", "classicvoice-pronunciation.png", app._pronunciation_dialog.destroy)

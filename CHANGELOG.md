@@ -2,6 +2,15 @@
 
 Los cambios notables de ClassicVoice se documentan aquí. Las versiones siguen [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-10-12
+
+- Selector de los 130 idiomas y variantes regionales incluidos en el motor local; las voces externas MBROLA quedan excluidas.
+- Editor y ajustes en dos columnas, con pestañas de voz y salida y sin desplazamiento general.
+- Entrada numérica de velocidad, tono y volumen; velocidad de 80 a 450 palabras por minuto y botón para restablecer la voz.
+- Importación TXT UTF-8/UTF-16, apertura de la carpeta de salida e indicador de síntesis.
+- Reglas de pronunciación por idioma, con migración de las reglas existentes a español.
+- Capturas renovadas y documentación multilingüe; pie de README simplificado a «Creado por smouj».
+
 ## [0.2.2] - 2026-10-12
 
 - Indicadores de velocidad, tono y volumen con mayor contraste y valores enteros.
@@ -32,6 +41,7 @@ Los cambios notables de ClassicVoice se documentan aquí. Las versiones siguen [
 - Cuatro presets iniciales y controles de velocidad, tono y volumen.
 - Previsualización y exportación WAV.
 
+[0.3.0]: https://github.com/smouj/classicvoice/releases/tag/v0.3.0
 [0.2.2]: https://github.com/smouj/classicvoice/releases/tag/v0.2.2
 [0.2.1]: https://github.com/smouj/classicvoice/releases/tag/v0.2.1
 [0.2.0]: https://github.com/smouj/classicvoice/releases/tag/v0.2.0

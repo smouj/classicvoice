@@ -16,6 +16,15 @@
 - [x] Reproducible Windows ZIP, SHA-256 file and GitHub Actions release workflow
 - [ ] Signed installer and automatic update flow
 
+## v0.3 — Multilingual desktop
+
+- [x] Discover the bundled languages and accents without external voice dependencies
+- [x] Select the language independently from the voice style
+- [x] Preserve pronunciation rules per language and migrate existing Spanish rules
+- [x] Editor and tabbed settings without global scrolling
+- [x] Numeric controls, voice reset, UTF-8/UTF-16 TXT import and output-folder access
+- [x] Actual desktop screenshots and automated layout checks
+
 ## Later, only if justified
 
 - [ ] Batch dialogue export

@@ -4,7 +4,7 @@
 
 <h1 align="center">ClassicVoice</h1>
 
-<p align="center"><strong>Texto a voz clásico en español. Local, sencillo y en WAV.</strong></p>
+<p align="center"><strong>Texto a voz en varios idiomas. Local, sencillo y en WAV.</strong></p>
 
 <p align="center">
   <a href="https://github.com/smouj/classicvoice/releases/latest"><img alt="Última versión" src="https://img.shields.io/github/v/release/smouj/classicvoice?label=versi%C3%B3n"></a>
@@ -16,7 +16,9 @@
 
 <p align="center"><a href="README.en.md">English</a> · <a href="https://github.com/smouj/classicvoice/releases/latest">Descargar para Windows</a></p>
 
-ClassicVoice convierte texto en voz sintética en español usando **eSpeak NG**. Escribe, ajusta una voz, escucha una vista previa y guarda el resultado como WAV desde una aplicación de escritorio para Windows.
+ClassicVoice convierte texto en voz sintética usando **eSpeak NG**. Elige el idioma del texto, ajusta una voz, escucha una vista previa y guarda el resultado como WAV desde una aplicación de escritorio para Windows.
+
+La distribución actual incluye **130 idiomas y variantes regionales**. El selector muestra las voces locales disponibles, incluyendo español, inglés, francés, alemán, portugués, árabe, chino, japonés y muchos más. Consulta el [catálogo de idiomas](docs/IDIOMAS.md). El texto se lee en el idioma seleccionado; la aplicación no traduce el contenido.
 
 **Todo el procesamiento de voz se realiza localmente.** La aplicación no requiere cuenta, clave API, conexión a Internet ni modelos de IA.
 
@@ -24,7 +26,7 @@ ClassicVoice convierte texto en voz sintética en español usando **eSpeak NG**.
 
 ## Capturas de la aplicación
 
-Interfaz real de ClassicVoice en Windows, con texto de ejemplo y el preset Narrador:
+Interfaz real de ClassicVoice en Windows, con texto en inglés y el estilo Narrador:
 
 ![Editor de ClassicVoice con texto de ejemplo y controles de voz](assets/screenshots/classicvoice-editor.png)
 
@@ -34,6 +36,14 @@ Interfaz real de ClassicVoice en Windows, con texto de ejemplo y el preset Narra
 **Pantalla inicial**
 
 ![Pantalla inicial de ClassicVoice](assets/screenshots/classicvoice-main.png)
+
+**Ventana compacta, sin desplazamiento general**
+
+![ClassicVoice en su tamaño mínimo de 860 por 620 píxeles](assets/screenshots/classicvoice-compact.png)
+
+**Configuración de salida**
+
+![Carpeta de salida, normalización y pronunciación](assets/screenshots/classicvoice-output.png)
 
 **Reglas de pronunciación de ejemplo**
 
@@ -55,18 +65,20 @@ Consulta la [guía de instalación y actualización](docs/INSTALACION.md) si nec
 ## Uso rápido
 
 1. Escribe o pega el texto en el editor.
-2. Elige uno de los cuatro presets y ajusta velocidad, tono y volumen.
+2. En la pestaña **Voz**, elige el idioma del texto y uno de los cuatro estilos. Ajusta velocidad, tono y volumen con los deslizadores o sus campos numéricos.
 3. Pulsa **Escuchar** para previsualizar la voz; **Detener** interrumpe el audio.
 4. Pulsa **Guardar WAV** y elige el nombre y la ubicación del archivo.
 
-Puedes crear reglas de pronunciación y normalizar el volumen antes de guardar. Los ajustes se recuerdan para la próxima vez. Usa **Ctrl + A** para seleccionar todo el texto y **Esc** para detener la voz. En ventanas pequeñas aparece una barra de desplazamiento para acceder a todos los controles. La [guía de uso](docs/GUIA_DE_USO.md) explica cada control y resuelve problemas frecuentes.
+En **Salida** puedes cambiar o abrir la carpeta de audio, normalizar el volumen y crear reglas de pronunciación por idioma. **Importar TXT** abre archivos UTF-8 o UTF-16. Los ajustes se recuerdan para la próxima vez. Usa **Ctrl + A** para seleccionar todo el texto y **Esc** para detener la voz. El editor y el panel de ajustes se adaptan a la ventana, sin desplazamiento general; solo el texto largo y la lista de pronunciación utilizan sus propias barras. La [guía de uso](docs/GUIA_DE_USO.md) explica cada control y resuelve problemas frecuentes.
 
 ## Qué incluye
 
-- Cuatro presets sintéticos de español y controles independientes de velocidad, tono y volumen.
+- Selector de idiomas y variantes regionales incluidos en el motor local.
+- Cuatro estilos sintéticos y controles independientes de velocidad, tono y volumen, con entrada numérica y restablecimiento de voz.
+- Editor adaptable, importación TXT y pestañas de voz y salida.
 - Interfaz que sigue respondiendo mientras sintetiza, con controles de previsualización y detención.
 - Exportación WAV validada y normalización de pico opcional.
-- Reglas de reemplazo de pronunciación y guardado de preferencias por usuario.
+- Reglas de pronunciación independientes por idioma y guardado de preferencias por usuario.
 - Paquete de escritorio con eSpeak NG y datos de voz incluidos.
 - Código de la aplicación basado en la biblioteca estándar de Python; PyInstaller solo se utiliza para crear el paquete de Windows.
 
@@ -104,4 +116,4 @@ La primera compilación descarga el MSI oficial de eSpeak NG 1.52.0, comprueba s
 - Problemas y propuestas: [GitHub Issues](https://github.com/smouj/classicvoice/issues)
 - Código: [smouj/classicvoice](https://github.com/smouj/classicvoice)
 
-<p align="center">Creado con cuidado por <a href="https://github.com/smouj">smouj</a> · ClassicVoice 0.2.2 · MIT</p>
+<p align="center">Creado por <a href="https://github.com/smouj">smouj</a> · ClassicVoice 0.3.0 · MIT</p>

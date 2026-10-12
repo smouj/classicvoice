@@ -23,13 +23,14 @@ git push origin --tags
 if ($LASTEXITCODE -ne 0) { throw 'Could not push tags to GitHub.' }
 
 gh repo edit $Repo `
-    --description 'Offline-first Spanish text-to-speech app for Windows. Classic eSpeak NG voices, WAV export, no accounts or cloud.' `
+    --description 'Offline multilingual text-to-speech for Windows. Classic eSpeak NG voices, language-specific pronunciation, and WAV export.' `
     --enable-issues `
     --disable-wiki `
     --add-topic text-to-speech `
     --add-topic tts `
     --add-topic espeak-ng `
-    --add-topic spanish `
+    --remove-topic spanish `
+    --add-topic multilingual `
     --add-topic windows `
     --add-topic offline `
     --add-topic local-first `

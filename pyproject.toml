@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "classicvoice"
-version = "0.2.2"
-description = "Local-first Spanish text-to-speech desktop app with classic eSpeak NG voices."
+version = "0.3.0"
+description = "Offline multilingual text-to-speech desktop app with classic eSpeak NG voices and WAV export."
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
 authors = [{name = "smouj"}]
-keywords = ["tts", "espeak-ng", "offline", "spanish", "local-first"]
+keywords = ["tts", "espeak-ng", "offline", "multilingual", "desktop"]
 classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: Microsoft :: Windows",

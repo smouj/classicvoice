@@ -1,8 +1,8 @@
 # Configuración del repositorio en GitHub
 
 - Repositorio: `smouj/classicvoice` (público; rama principal `main`).
-- Descripción: `Offline-first Spanish text-to-speech app for Windows. Classic eSpeak NG voices, WAV export, no accounts or cloud.`
-- Temas: `text-to-speech`, `tts`, `espeak-ng`, `spanish`, `windows`, `offline`, `local-first`, `open-source`, `desktop-app`, `python`.
+- Descripción: `Offline multilingual text-to-speech for Windows. Classic eSpeak NG voices, language-specific pronunciation, and WAV export.`
+- Temas: `text-to-speech`, `tts`, `espeak-ng`, `multilingual`, `windows`, `offline`, `local-first`, `open-source`, `desktop-app`, `python`.
 - Issues habilitados; mantener la guía y la arquitectura versionadas en `docs/`.
 - Publicar versiones con tags SemVer `vMAJOR.MINOR.PATCH`. Un tag `vX.Y.Z` ejecuta el flujo de compilación de Windows, genera el ZIP y el SHA-256 y crea un GitHub Release.
 - Cada paquete distribuido debe conservar los avisos de eSpeak NG y su código fuente correspondiente.

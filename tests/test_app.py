@@ -22,7 +22,7 @@ def app(monkeypatch, tmp_path):
 
 
 def assert_contained(parent):
-    children = [child for child in parent.winfo_children() if child.winfo_manager()]
+    children = [child for child in parent.winfo_children() if child.winfo_ismapped()]
     for child in children:
         assert child.winfo_x() >= 0, str(child)
         assert child.winfo_y() >= 0, str(child)
@@ -36,16 +36,18 @@ def assert_contained(parent):
             assert overlap_x <= 0 or overlap_y <= 0, f"Overlapping controls: {first}, {second}"
 
 
-@pytest.mark.parametrize("size", ["780x650", "900x820", "1200x900"])
-def test_controls_fit_and_short_windows_scroll(app, size):
-    app.status.set("WAV guardado correctamente · " + "Nombre largo del archivo " * 6)
+@pytest.mark.parametrize("size", ["860x620", "1100x720", "1400x900"])
+def test_controls_fit_without_global_scrolling(app, size):
     app.geometry(size)
     app.update()
-    assert_contained(app._page)
-    assert bool(app._page_scrollbar.winfo_manager()) == (app._page.winfo_reqheight() > app._viewport.winfo_height())
-    app._viewport.yview_moveto(1)
-    app.update()
-    assert app.stop_button.winfo_rooty() + app.stop_button.winfo_height() <= app._viewport.winfo_rooty() + app._viewport.winfo_height()
+    editor_width = app.text.winfo_width()
+    for tab in app.settings_tabs.tabs():
+        app.settings_tabs.select(tab)
+        app.update()
+        assert_contained(app._page)
+        assert app.text.winfo_width() == editor_width
+    assert not hasattr(app, "_viewport")
+    assert app.stop_button.winfo_rooty() + app.stop_button.winfo_height() <= app.winfo_rooty() + app.winfo_height()
 
 
 def test_save_shortcut_while_busy_does_not_open_dialog(app, monkeypatch):
@@ -68,8 +70,62 @@ def test_voice_slider_rounds_to_integer(app):
     speed_slider = next(sliders(app))
     speed_slider.set(128.8)
     assert app.speed.get() == 129
-    speed_slider.set(299.8)
-    assert app.speed.get() == 300
+    speed_slider.set(449.8)
+    assert app.speed.get() == 450
+
+
+def test_numeric_input_recovers_empty_invalid_and_out_of_range_values(app):
+    value, variable, low, high = app._numeric_inputs[0]
+    original = variable.get()
+    for invalid in ("", "abc"):
+        value.set(invalid)
+        app._commit_number(value, variable, low, high)
+        assert variable.get() == original
+    value.set("9999")
+    app._commit_number(value, variable, low, high)
+    assert variable.get() == 450
+    assert value.get() == "450"
+
+
+def test_pronunciation_and_language_are_saved_independently(app):
+    if not any(language.code == "en-us" for language in app.languages):
+        pytest.skip("English engine voice not installed")
+    app.pronunciation_rules["WAV"] = "uve doble a uve"
+    english = next(language for language in app.languages if language.code == "en-us")
+    app.language_label.set(english.label)
+    app._apply_language()
+    assert app.pronunciation_rules == {}
+    app.pronunciation_rules["WAV"] = "wave"
+    config = app._config_values()
+    assert config["language_code"] == "en-us"
+    assert config["pronunciation_by_language"]["es"]["WAV"] == "uve doble a uve"
+    assert config["pronunciation_by_language"]["en-us"]["WAV"] == "wave"
+
+
+def test_legacy_spanish_rules_survive_config_migration(app, monkeypatch):
+    monkeypatch.setattr(ui, "_load_config", lambda: {"preset_key": "classic", "pronunciation_rules": {"WAV": "uve doble a uve"}})
+    migrated = ui.ClassicVoiceApp()
+    try:
+        assert migrated.pronunciation_rules == {"WAV": "uve doble a uve"}
+        config = migrated._config_values()
+        assert config["version"] == 3
+        assert config["pronunciation_by_language"]["es"]["WAV"] == "uve doble a uve"
+    finally:
+        migrated._close()
+
+
+def test_utf16_text_import_can_be_undone(app, monkeypatch, tmp_path):
+    document = tmp_path / "document.txt"
+    document.write_text("Texto nuevo: áéíóú", encoding="utf-16")
+    monkeypatch.setattr(ui.filedialog, "askopenfilename", lambda **kwargs: str(document))
+    app._clear_placeholder()
+    app.text.insert("1.0", "Texto anterior")
+    app.text.edit_reset()
+    app._import_text()
+    assert app._text_value() == "Texto nuevo: áéíóú"
+    app.text.edit_undo()
+    assert app._text_value() == "Texto anterior"
+    assert document.read_text(encoding="utf-16") == "Texto nuevo: áéíóú"
 
 
 def test_preview_survives_worker_until_playback_cleanup(app, monkeypatch, tmp_path):

@@ -21,11 +21,13 @@ from .core import (
     MAX_TEXT_CHARS,
     PRESETS,
     VoicePreset,
+    VoiceLanguage,
     app_data_dir,
     app_resource_dir,
     apply_pronunciation_rules,
     build_espeak_file_command,
     espeak_environment,
+    discover_voice_languages,
     normalize_wav,
     resolve_espeak,
     validate_wav,
@@ -116,8 +118,8 @@ class ClassicVoiceApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("ClassicVoice")
-        self.geometry("900x820")
-        self.minsize(780, 650)
+        self.geometry("1100x720")
+        self.minsize(860, 620)
         self.configure(bg=COLORS["canvas"])
         icon_path = APP_DIR / "assets" / "classicvoice.ico"
         if icon_path.is_file():
@@ -136,7 +138,7 @@ class ClassicVoiceApp(tk.Tk):
         selected = next((p for p in PRESETS if p.key == saved_key), PRESETS[0])
 
         self.preset_label = tk.StringVar(value=selected.label)
-        self.speed = tk.IntVar(value=_bounded_int(cfg.get("speed"), selected.speed, 80, 300))
+        self.speed = tk.IntVar(value=_bounded_int(cfg.get("speed"), selected.speed, 80, 450))
         self.pitch = tk.IntVar(value=_bounded_int(cfg.get("pitch"), selected.pitch, 0, 99))
         self.volume = tk.IntVar(value=_bounded_int(cfg.get("volume"), selected.amplitude, 0, 200))
         normalize_value = cfg.get("normalize", True)
@@ -150,6 +152,20 @@ class ClassicVoiceApp(tk.Tk):
         self.word_count = tk.StringVar(value="0 palabras · 0 caracteres")
         self.preset_description = tk.StringVar(value=selected.description)
         self.engine = resolve_espeak(APP_DIR)
+        self.languages = discover_voice_languages(self.engine, APP_DIR)
+        saved_language = str(cfg.get("language_code", "es"))
+        selected_language = next((language for language in self.languages if language.code == saved_language), self.languages[0] if self.languages else None)
+        self._language_code = selected_language.code if selected_language else "es"
+        self.language_label = tk.StringVar(value=selected_language.label if selected_language else "Motor no disponible")
+        all_rules = cfg.get("pronunciation_by_language", {})
+        self._rules_by_language = {}
+        if isinstance(all_rules, dict):
+            for code, mapping in all_rules.items():
+                if isinstance(code, str) and isinstance(mapping, dict):
+                    self._rules_by_language[code] = {str(key).strip()[:80]: str(value).strip()[:120] for key, value in mapping.items() if str(key).strip() and str(value).strip()}
+        self._rules_by_language.setdefault(str(cfg.get("language_code", "es")), self.pronunciation_rules)
+        self.pronunciation_rules = self._rules_by_language.setdefault(self._language_code, {})
+        self._numeric_inputs: list[tuple[tk.StringVar, tk.IntVar, int, int]] = []
         self._events: queue.Queue = queue.Queue()
         self._worker: threading.Thread | None = None
         self._process: subprocess.Popen | None = None
@@ -163,7 +179,6 @@ class ClassicVoiceApp(tk.Tk):
         self._save_after: str | None = None
         self._placeholder_active = True
         self._preview_path: Path | None = None
-        self._layout_after: str | None = None
         self._pronunciation_dialog: tk.Toplevel | None = None
 
         self._configure_style()
@@ -195,7 +210,15 @@ class ClassicVoiceApp(tk.Tk):
         style.map("Secondary.TButton", background=[("disabled", "#f2f3f7"), ("active", "#f4f5fb")])
         style.configure("Stop.TButton", background=COLORS["card"], foreground=COLORS["red"], padding=(13, 10), font=("Segoe UI", 10, "bold"), borderwidth=1)
         style.map("Stop.TButton", background=[("disabled", "#f2f3f7"), ("active", "#fff0f0")])
-        style.configure("TCombobox", padding=8, fieldbackground=COLORS["card"], background=COLORS["card"], foreground=COLORS["text"])
+        style.configure("TCombobox", padding=(8, 5), fieldbackground=COLORS["card"], background=COLORS["card"], foreground=COLORS["text"])
+        style.map("TCombobox", fieldbackground=[("readonly", COLORS["card"])], selectbackground=[("readonly", COLORS["card"])], selectforeground=[("readonly", COLORS["text"])])
+        style.configure("Quiet.TButton", background=COLORS["card"], foreground=COLORS["text"], padding=(10, 6), font=("Segoe UI", 9), borderwidth=1)
+        style.map("Quiet.TButton", background=[("active", "#f4f5fb")])
+        style.configure("TNotebook", background=COLORS["card"], borderwidth=0)
+        style.configure("TNotebook.Tab", padding=(16, 7), font=("Segoe UI", 10, "bold"))
+        style.map("TNotebook.Tab", background=[("selected", COLORS["accent"]), ("!selected", "#e8eaf3")], foreground=[("selected", "#ffffff"), ("!selected", COLORS["muted"])])
+        style.configure("TSpinbox", padding=3, fieldbackground=COLORS["card"], font=("Segoe UI", 10))
+        style.configure("Voice.Horizontal.TProgressbar", background=COLORS["accent"], troughcolor=COLORS["canvas"], bordercolor=COLORS["canvas"], lightcolor=COLORS["canvas"], darkcolor=COLORS["canvas"], borderwidth=0, thickness=3)
         style.configure("TCheckbutton", background=COLORS["card"], foreground=COLORS["text"], font=("Segoe UI", 9))
         style.configure("Voice.Horizontal.TScale", background=COLORS["accent"], troughcolor="#e8eaf3", bordercolor=COLORS["accent"], lightcolor=COLORS["accent"], darkcolor=COLORS["accent"], arrowcolor="#ffffff")
         style.map("Voice.Horizontal.TScale", background=[("active", COLORS["accent_hover"])])
@@ -203,64 +226,45 @@ class ClassicVoiceApp(tk.Tk):
         style.configure("Treeview.Heading", font=("Segoe UI", 9, "bold"))
 
     def _build(self) -> None:
-        self._viewport = tk.Canvas(self, bg=COLORS["canvas"], highlightthickness=0)
-        self._page_scrollbar = ttk.Scrollbar(self, orient="vertical", command=self._viewport.yview)
-        self._viewport.configure(yscrollcommand=self._page_scrollbar.set)
-        self._viewport.pack(side="left", fill="both", expand=True)
-        page = ttk.Frame(self._viewport, style="App.TFrame", padding=(26, 22, 26, 18))
+        page = ttk.Frame(self, style="App.TFrame", padding=(20, 16, 20, 12))
+        page.pack(fill="both", expand=True)
         self._page = page
-        self._page_window = self._viewport.create_window(0, 0, window=page, anchor="nw")
-        self._viewport.bind("<Configure>", self._schedule_layout)
-        page.bind("<Configure>", self._schedule_layout)
+        page.columnconfigure(0, weight=1)
+        page.rowconfigure(1, weight=1)
 
         header = ttk.Frame(page, style="App.TFrame")
-        header.pack(fill="x", pady=(0, 17))
-        title_block = ttk.Frame(header, style="App.TFrame")
-        title_block.pack(side="left", fill="x", expand=True)
-        ttk.Label(title_block, text="ClassicVoice", style="Header.TLabel").pack(anchor="w")
-        self._subtitle = ttk.Label(title_block, text="Voz clásica en español, con control total y sin salir de tu PC.", style="Subtitle.TLabel", wraplength=430)
-        self._subtitle.pack(anchor="w", pady=(2, 0))
-        engine_label = "Motor de voz listo" if self.engine else "Falta el motor de voz"
-        engine_style = "EngineOk.TLabel" if self.engine else "EngineMissing.TLabel"
-        ttk.Label(header, text=engine_label, style=engine_style).pack(side="right", anchor="center", padx=(12, 0))
+        header.grid(row=0, column=0, sticky="ew", pady=(0, 12))
+        header.columnconfigure(0, weight=1)
+        ttk.Label(header, text="ClassicVoice", style="Header.TLabel").grid(row=0, column=0, sticky="w")
+        self._subtitle = ttk.Label(header, text="Texto a voz en varios idiomas. Local, sencillo y en WAV.", style="Subtitle.TLabel")
+        self._subtitle.grid(row=1, column=0, sticky="w", pady=(2, 0))
+        engine_ready = bool(self.engine and self.languages)
+        ttk.Label(header, text="Motor de voz listo" if engine_ready else "Motor no disponible", style="EngineOk.TLabel" if engine_ready else "EngineMissing.TLabel").grid(row=0, column=1, rowspan=2, sticky="e", padx=(12, 0))
 
-        if not self.engine:
-            notice = tk.Label(
-                page,
-                text="No se ha encontrado eSpeak NG. La instalación completa incluye el motor; al ejecutar desde el código, instálalo o colócalo en bin/espeak-ng/.",
-                bg=COLORS["amber_soft"], fg=COLORS["amber"], font=("Segoe UI", 9),
-                padx=12, pady=9, justify="left", wraplength=800,
-            )
-            notice.pack(fill="x", pady=(0, 12))
+        body = ttk.Frame(page, style="App.TFrame")
+        body.grid(row=1, column=0, sticky="nsew")
+        body.rowconfigure(0, weight=1)
+        body.columnconfigure(0, weight=3, minsize=320, uniform="panels")
+        body.columnconfigure(1, weight=2, minsize=320, uniform="panels")
 
-        editor = ttk.Frame(page, style="Card.TFrame", padding=16)
-        editor.pack(fill="both", expand=True)
+        editor = ttk.Frame(body, style="Card.TFrame", padding=14)
+        editor.grid(row=0, column=0, sticky="nsew", padx=(0, 14))
+        editor.rowconfigure(2, weight=1)
+        editor.columnconfigure(0, weight=1)
         editor_top = ttk.Frame(editor, style="Card.TFrame")
-        editor_top.pack(fill="x", pady=(0, 8))
+        editor_top.grid(row=0, column=0, sticky="ew")
         ttk.Label(editor_top, text="Texto", style="CardTitle.TLabel").pack(side="left")
-        ttk.Label(editor_top, textvariable=self.word_count, style="CardText.TLabel").pack(side="right")
+        ttk.Button(editor_top, text="Importar TXT…", style="Quiet.TButton", command=self._import_text).pack(side="right")
+        ttk.Label(editor, textvariable=self.word_count, style="CardText.TLabel").grid(row=1, column=0, sticky="w", pady=(4, 8))
         editor_area = ttk.Frame(editor, style="Card.TFrame")
-        editor_area.pack(fill="both", expand=True)
+        editor_area.grid(row=2, column=0, sticky="nsew")
         editor_area.rowconfigure(0, weight=1)
         editor_area.columnconfigure(0, weight=1)
         self.text = tk.Text(
-            editor_area,
-            height=4,
-            wrap="word",
-            font=("Segoe UI", 11),
-            undo=True,
-            padx=13,
-            pady=12,
-            bg="#ffffff",
-            fg="#8792a5",
-            insertbackground=COLORS["accent"],
-            selectbackground="#dcd9ff",
-            selectforeground=COLORS["text"],
-            relief="flat",
-            highlightthickness=1,
-            highlightbackground=COLORS["border"],
-            highlightcolor=COLORS["accent"],
-            maxundo=100,
+            editor_area, height=5, width=1, wrap="word", font=("Segoe UI", 11), undo=True,
+            padx=12, pady=10, bg=COLORS["card"], fg="#8792a5",
+            insertbackground=COLORS["accent"], selectbackground="#dcd9ff", selectforeground=COLORS["text"],
+            relief="flat", highlightthickness=1, highlightbackground=COLORS["border"], highlightcolor=COLORS["accent"], maxundo=100,
         )
         self.text.grid(row=0, column=0, sticky="nsew")
         scrollbar = ttk.Scrollbar(editor_area, orient="vertical", command=self.text.yview)
@@ -268,97 +272,144 @@ class ClassicVoiceApp(tk.Tk):
         self.text.configure(yscrollcommand=scrollbar.set)
         self.text.insert("1.0", PLACEHOLDER)
         self.text.edit_modified(False)
-        self._editor_hint = ttk.Label(editor, text="Ctrl + Intro: escuchar · Ctrl + S: guardar WAV · Esc: detener", style="CardText.TLabel", wraplength=650)
-        self._editor_hint.pack(anchor="w", pady=(7, 0))
+        self._editor_hint = ttk.Label(editor, text="Ctrl + Intro: escuchar · Ctrl + S: guardar · Esc: detener", style="CardText.TLabel", wraplength=340)
+        self._editor_hint.grid(row=3, column=0, sticky="ew", pady=(8, 0))
+        editor.bind("<Configure>", lambda event: self._editor_hint.configure(wraplength=max(180, event.width - 28)))
 
-        settings = ttk.Frame(page, style="Card.TFrame", padding=(16, 13))
-        settings.pack(fill="x", pady=(14, 0))
-        ttk.Label(settings, text="Voz y salida", style="CardTitle.TLabel").pack(anchor="w", pady=(0, 8))
+        settings = ttk.Frame(body, style="Card.TFrame", padding=12)
+        settings.grid(row=0, column=1, sticky="nsew")
+        settings.columnconfigure(0, weight=1)
+        settings.rowconfigure(0, weight=1)
+        self.settings_tabs = ttk.Notebook(settings)
+        self.settings_tabs.grid(row=0, column=0, sticky="nsew")
+        voice = ttk.Frame(self.settings_tabs, style="Card.TFrame", padding=(12, 8))
+        output = ttk.Frame(self.settings_tabs, style="Card.TFrame", padding=(12, 10))
+        self.settings_tabs.add(voice, text="Voz")
+        self.settings_tabs.add(output, text="Salida")
+        voice.columnconfigure(0, weight=1)
+        ttk.Label(voice, text="Idioma del texto", style="CardTitle.TLabel").grid(row=0, column=0, sticky="w")
+        self.language_combo = ttk.Combobox(voice, textvariable=self.language_label, values=[language.label for language in self.languages], state="readonly" if self.languages else "disabled", width=1)
+        self.language_combo.grid(row=1, column=0, sticky="ew", pady=(4, 6))
+        ttk.Label(voice, text="Estilo de voz", style="CardTitle.TLabel").grid(row=2, column=0, sticky="w")
+        self.preset_combo = ttk.Combobox(voice, textvariable=self.preset_label, values=[preset.label for preset in PRESETS], state="readonly", width=1)
+        self.preset_combo.grid(row=3, column=0, sticky="ew", pady=(4, 5))
+        self._preset_hint = ttk.Label(voice, textvariable=self.preset_description, style="CardText.TLabel", wraplength=260)
+        self._preset_hint.grid(row=4, column=0, sticky="ew", pady=(0, 2))
+        self._slider(voice, "Velocidad", self.speed, 80, 450, "palabras/min", 5)
+        self._slider(voice, "Tono", self.pitch, 0, 99, "grave → agudo", 6)
+        self._slider(voice, "Volumen", self.volume, 0, 200, "%", 7)
+        ttk.Button(voice, text="Restablecer voz", style="Quiet.TButton", command=self._apply_preset).grid(row=8, column=0, sticky="ew", pady=(8, 0))
+        voice.bind("<Configure>", lambda event: self._preset_hint.configure(wraplength=max(180, event.width - 24)))
 
-        preset_row = ttk.Frame(settings, style="Card.TFrame")
-        preset_row.pack(fill="x", pady=(0, 7))
-        ttk.Label(preset_row, text="Preset", style="CardText.TLabel", width=11).pack(side="left")
-        self.preset_combo = ttk.Combobox(
-            preset_row,
-            textvariable=self.preset_label,
-            values=[preset.label for preset in PRESETS],
-            state="readonly",
-            width=23,
-        )
-        self.preset_combo.pack(side="left")
-        self._preset_hint = ttk.Label(settings, textvariable=self.preset_description, style="CardText.TLabel", wraplength=650)
-        self._preset_hint.pack(anchor="w", pady=(0, 7))
-
-        self._slider(settings, "Velocidad", self.speed, 80, 300, "palabras por minuto")
-        self._slider(settings, "Tono", self.pitch, 0, 99, "grave a agudo")
-        self._slider(settings, "Volumen", self.volume, 0, 200, "nivel de síntesis")
-
-        output_row = ttk.Frame(settings, style="Card.TFrame")
-        output_row.pack(fill="x", pady=(8, 0))
-        output_row.columnconfigure(1, weight=1)
-        ttk.Label(output_row, text="Guardar en", style="CardText.TLabel", width=11).grid(row=0, column=0, sticky="w")
-        self.dir_label = ttk.Label(output_row, text=self._short_dir(), style="CardText.TLabel", width=1, anchor="w")
-        self.dir_label.grid(row=0, column=1, sticky="ew", padx=(0, 12))
-        ttk.Button(output_row, text="Cambiar…", style="Secondary.TButton", command=self._choose_dir).grid(row=0, column=2, sticky="e")
-        options_row = ttk.Frame(settings, style="Card.TFrame")
-        options_row.pack(fill="x", pady=(8, 0))
-        ttk.Checkbutton(options_row, text="Normalizar volumen", variable=self.normalize_audio).pack(side="left")
-        self.rules_button = ttk.Button(options_row, text=f"Pronunciación · {len(self.pronunciation_rules)}", style="Secondary.TButton", command=self._open_pronunciation)
-        self.rules_button.pack(side="right")
+        output.columnconfigure(0, weight=1)
+        ttk.Label(output, text="Carpeta de salida", style="CardTitle.TLabel").grid(row=0, column=0, sticky="w")
+        self.dir_label = ttk.Label(output, text=self._short_dir(), style="CardText.TLabel", wraplength=260)
+        self.dir_label.grid(row=1, column=0, sticky="ew", pady=(6, 10))
+        folder_actions = ttk.Frame(output, style="Card.TFrame")
+        folder_actions.grid(row=2, column=0, sticky="ew")
+        folder_actions.columnconfigure((0, 1), weight=1)
+        ttk.Button(folder_actions, text="Cambiar…", style="Quiet.TButton", command=self._choose_dir).grid(row=0, column=0, sticky="ew", padx=(0, 4))
+        ttk.Button(folder_actions, text="Abrir carpeta", style="Quiet.TButton", command=self._open_output_folder).grid(row=0, column=1, sticky="ew", padx=(4, 0))
+        ttk.Separator(output).grid(row=3, column=0, sticky="ew", pady=16)
+        ttk.Checkbutton(output, text="Normalizar volumen", variable=self.normalize_audio).grid(row=4, column=0, sticky="w")
+        ttk.Label(output, text="Fija el pico del WAV. Desactívalo para conservar el volumen elegido.", style="CardText.TLabel", wraplength=260).grid(row=5, column=0, sticky="ew", pady=(6, 16))
+        self.rules_button = ttk.Button(output, text=f"Pronunciación · {len(self.pronunciation_rules)}", style="Secondary.TButton", command=self._open_pronunciation)
+        self.rules_button.grid(row=6, column=0, sticky="ew")
+        ttk.Label(output, text="Las reglas se guardan por idioma. El texto original permanece intacto.", style="CardText.TLabel", wraplength=260).grid(row=7, column=0, sticky="ew", pady=(8, 0))
+        output.bind("<Configure>", lambda event: [child.configure(wraplength=max(180, event.width - 24)) for child in output.winfo_children() if isinstance(child, ttk.Label)])
 
         actions = ttk.Frame(page, style="App.TFrame")
-        actions.pack(fill="x", pady=(15, 7))
+        actions.grid(row=2, column=0, sticky="ew", pady=(12, 8))
+        actions.columnconfigure((0, 1), weight=1)
         self.preview_button = ttk.Button(actions, text="▶  Escuchar", style="Primary.TButton", command=self._preview)
-        self.preview_button.pack(side="left", expand=True, fill="x", padx=(0, 6))
+        self.preview_button.grid(row=0, column=0, sticky="ew", padx=(0, 6))
         self.save_button = ttk.Button(actions, text="Guardar WAV", style="Secondary.TButton", command=self._save)
-        self.save_button.pack(side="left", expand=True, fill="x", padx=(6, 6))
+        self.save_button.grid(row=0, column=1, sticky="ew", padx=6)
         self.stop_button = ttk.Button(actions, text="Detener", style="Stop.TButton", command=self._stop, state="disabled")
-        self.stop_button.pack(side="left", padx=(6, 0))
+        self.stop_button.grid(row=0, column=2, padx=(6, 0))
+        self._progress = ttk.Progressbar(actions, mode="determinate", value=0, length=1, style="Voice.Horizontal.TProgressbar")
+        self._progress.grid(row=1, column=0, columnspan=3, sticky="ew", pady=(6, 0))
 
         footer = ttk.Frame(page, style="App.TFrame")
-        footer.pack(fill="x")
-        self._status_label = ttk.Label(footer, textvariable=self.status, style="Status.TLabel", wraplength=650)
-        self._status_label.pack(anchor="w", fill="x")
-        ttk.Label(footer, text=f"Versión {__version__} · Procesamiento local", style="Status.TLabel").pack(anchor="w", pady=(4, 0))
+        footer.grid(row=3, column=0, sticky="ew")
+        footer.columnconfigure(0, weight=1)
+        self._status_label = ttk.Label(footer, textvariable=self.status, style="Status.TLabel", width=1, anchor="w")
+        self._status_label.grid(row=0, column=0, sticky="ew", padx=(0, 10))
+        ttk.Label(footer, text=f"v{__version__} · Local", style="Status.TLabel").grid(row=0, column=1, sticky="e")
 
-    def _schedule_layout(self, _event=None) -> None:
-        if self._layout_after is None and not self._closing:
-            self._layout_after = self.after_idle(self._update_layout)
-
-    def _update_layout(self) -> None:
-        self._layout_after = None
-        width = max(1, self._viewport.winfo_width())
-        height = max(self._page.winfo_reqheight(), self._viewport.winfo_height())
-        self._viewport.itemconfigure(self._page_window, width=width, height=height)
-        self._viewport.configure(scrollregion=(0, 0, width, height))
-        if height > self._viewport.winfo_height():
-            if not self._page_scrollbar.winfo_manager():
-                self._page_scrollbar.pack(side="right", fill="y")
-        else:
-            self._page_scrollbar.pack_forget()
-            self._viewport.yview_moveto(0)
-        for label in (self._editor_hint, self._preset_hint, self._status_label):
-            label.configure(wraplength=max(180, width - 90))
-        self._subtitle.configure(wraplength=max(180, width - 260))
-
-    def _slider(self, parent, label: str, variable: tk.IntVar, low: int, high: int, hint: str) -> None:
+    def _slider(self, parent, label: str, variable: tk.IntVar, low: int, high: int, hint: str, row_number: int) -> None:
         row = ttk.Frame(parent, style="Card.TFrame")
-        row.pack(fill="x", pady=1)
-        ttk.Label(row, text=label, style="CardText.TLabel", width=11).pack(side="left")
-        scale = ttk.Scale(
-            row,
-            from_=low,
-            to=high,
-            variable=variable,
-            orient="horizontal",
-            command=lambda value: variable.set(round(float(value))),
-            style="Voice.Horizontal.TScale",
-            length=360,
-            takefocus=True,
-        )
-        scale.pack(side="left", fill="x", expand=True, padx=(3, 8))
-        ttk.Label(row, textvariable=variable, style="CardTitle.TLabel", width=4, anchor="e").pack(side="right", padx=(0, 10))
-        ttk.Label(row, text=hint, style="CardText.TLabel", width=22).pack(side="right", anchor="e")
+        row.grid(row=row_number, column=0, sticky="ew", pady=(3, 0))
+        row.columnconfigure(0, weight=1)
+        ttk.Label(row, text=f"{label} · {hint}", style="CardText.TLabel").grid(row=0, column=0, sticky="w")
+        value = tk.StringVar(value=str(variable.get()))
+        self._numeric_inputs.append((value, variable, low, high))
+        variable.trace_add("write", lambda *_args: value.set(str(variable.get())))
+        number = ttk.Spinbox(row, from_=low, to=high, textvariable=value, width=5, command=lambda: self._commit_number(value, variable, low, high))
+        number.grid(row=0, column=1, sticky="e")
+        number.bind("<FocusOut>", lambda _event: self._commit_number(value, variable, low, high))
+        number.bind("<Return>", lambda _event: self._commit_number(value, variable, low, high))
+        scale = ttk.Scale(row, from_=low, to=high, variable=variable, orient="horizontal", command=lambda number: variable.set(round(float(number))), style="Voice.Horizontal.TScale", length=1, takefocus=True)
+        scale.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(4, 0))
+
+    def _commit_number(self, value: tk.StringVar, variable: tk.IntVar, low: int, high: int) -> None:
+        number = _bounded_int(value.get(), variable.get(), low, high)
+        variable.set(number)
+        value.set(str(number))
+
+    def _language(self) -> VoiceLanguage | None:
+        return next((language for language in self.languages if language.code == self._language_code), None)
+
+    def _apply_language(self, _event=None) -> None:
+        language = next((language for language in self.languages if language.label == self.language_label.get()), None)
+        if language is None:
+            return
+        self._rules_by_language[self._language_code] = self.pronunciation_rules
+        self._language_code = language.code
+        self.pronunciation_rules = self._rules_by_language.setdefault(language.code, {})
+        self.rules_button.configure(text=f"Pronunciación · {len(self.pronunciation_rules)}")
+        self.status.set(f"Idioma: {language.name}")
+        self._schedule_config_save()
+
+    def _import_text(self) -> None:
+        selected = filedialog.askopenfilename(title="Importar texto", filetypes=[("Texto", "*.txt"), ("Todos los archivos", "*.*")], parent=self)
+        if not selected:
+            return
+        try:
+            with Path(selected).open("rb") as source:
+                raw = source.read(MAX_TEXT_CHARS * 4 + 5)
+            if len(raw) > MAX_TEXT_CHARS * 4 + 4:
+                raise ValueError("El archivo es demasiado grande para una lectura.")
+            encoding = "utf-16" if raw.startswith((b"\xff\xfe", b"\xfe\xff")) else "utf-8-sig"
+            content = raw.decode(encoding)
+            if len(content) > MAX_TEXT_CHARS:
+                raise ValueError(f"El archivo supera el límite de {MAX_TEXT_CHARS:,} caracteres.")
+        except (OSError, UnicodeError, ValueError) as exc:
+            messagebox.showerror("No se pudo importar", f"Utiliza un TXT en UTF-8 o UTF-16.\n\n{exc}", parent=self)
+            return
+        self._clear_placeholder()
+        self.text.configure(autoseparators=False)
+        try:
+            self.text.edit_separator()
+            self.text.delete("1.0", "end")
+            self.text.insert("1.0", content)
+            self.text.edit_separator()
+        finally:
+            self.text.configure(autoseparators=True)
+        self._update_count()
+        self.text.focus_set()
+        self.status.set(f"Texto importado · {len(content):,} caracteres")
+
+    def _open_output_folder(self) -> None:
+        try:
+            folder = Path(self._last_dir)
+            folder.mkdir(parents=True, exist_ok=True)
+            if os.name == "nt":
+                os.startfile(str(folder))
+            else:
+                messagebox.showinfo("Carpeta de salida", str(folder), parent=self)
+        except OSError as exc:
+            messagebox.showerror("Carpeta no disponible", str(exc), parent=self)
 
     def _bind_events(self) -> None:
         self.text.bind("<<Modified>>", self._on_text_modified)
@@ -367,12 +418,12 @@ class ClassicVoiceApp(tk.Tk):
         self.text.bind("<Control-a>", self._select_all_text)
         self.text.bind("<Control-A>", self._select_all_text)
         self.preset_combo.bind("<<ComboboxSelected>>", self._apply_preset)
+        self.language_combo.bind("<<ComboboxSelected>>", self._apply_language)
         self.bind("<Control-Return>", self._hotkey_preview)
         self.bind("<Control-s>", self._hotkey_save)
         self.bind("<Control-S>", self._hotkey_save)
+        self.bind("<Control-o>", lambda _event: self._import_text())
         self.bind("<Escape>", lambda _event: self._stop())
-        self.bind("<MouseWheel>", self._scroll_page)
-        self.bind("<FocusIn>", self._reveal_focused_control, add="+")
         for variable in (self.speed, self.pitch, self.volume, self.normalize_audio):
             variable.trace_add("write", self._schedule_config_save)
 
@@ -398,27 +449,6 @@ class ClassicVoiceApp(tk.Tk):
             self.text.edit_modified(False)
             self.text.edit_reset()
             self._update_count()
-
-    def _scroll_page(self, event) -> None:
-        if event.widget is self.text or not self._page_scrollbar.winfo_manager():
-            return
-        if isinstance(event.widget, (tk.Scale, ttk.Scale)):
-            return
-        self._viewport.yview_scroll(-int(event.delta / 120), "units")
-
-    def _reveal_focused_control(self, event) -> None:
-        widget = event.widget
-        if widget.winfo_toplevel() is not self or not self._page_scrollbar.winfo_manager():
-            return
-        top = widget.winfo_rooty() - self._page.winfo_rooty()
-        bottom = top + widget.winfo_height()
-        visible_top = self._viewport.canvasy(0)
-        visible_bottom = visible_top + self._viewport.winfo_height()
-        total = max(1, self._page.winfo_height())
-        if top < visible_top:
-            self._viewport.yview_moveto(max(0, top - 12) / total)
-        elif bottom > visible_bottom:
-            self._viewport.yview_moveto((bottom + 12 - self._viewport.winfo_height()) / total)
 
     def _on_text_modified(self, _event=None) -> None:
         if self.text.edit_modified():
@@ -476,15 +506,17 @@ class ClassicVoiceApp(tk.Tk):
         self._save_after = self.after(650, self._write_config)
 
     def _config_values(self) -> dict:
+        self._rules_by_language[self._language_code] = self.pronunciation_rules
         return {
-            "version": 2,
+            "version": 3,
+            "language_code": self._language_code,
             "preset_key": self._preset().key,
-            "speed": _bounded_int(self.speed.get(), self._preset().speed, 80, 300),
+            "speed": _bounded_int(self.speed.get(), self._preset().speed, 80, 450),
             "pitch": _bounded_int(self.pitch.get(), self._preset().pitch, 0, 99),
             "volume": _bounded_int(self.volume.get(), self._preset().amplitude, 0, 200),
             "normalize": bool(self.normalize_audio.get()),
             "last_dir": self._last_dir,
-            "pronunciation_rules": self.pronunciation_rules,
+            "pronunciation_by_language": self._rules_by_language,
         }
 
     def _write_config(self) -> None:
@@ -493,7 +525,7 @@ class ClassicVoiceApp(tk.Tk):
             _save_config(self._config_values())
         except OSError as exc:
             if not self._closing:
-                self.status.set(f"No se pudieron guardar los ajustes: {exc}")
+                self.status.set("No se pudieron guardar los ajustes")
 
     def _hotkey_preview(self, _event=None):
         self._preview()
@@ -561,6 +593,12 @@ class ClassicVoiceApp(tk.Tk):
                 parent=self,
             )
             return
+        language = self._language()
+        if language is None:
+            messagebox.showerror("Idiomas no disponibles", "No se pudo leer el catálogo de voces. Reinstala el paquete completo de ClassicVoice.", parent=self)
+            return
+        for value, variable, low, high in self._numeric_inputs:
+            self._commit_number(value, variable, low, high)
 
         processed = apply_pronunciation_rules(source, self.pronunciation_rules)
         if not processed.strip():
@@ -569,7 +607,8 @@ class ClassicVoiceApp(tk.Tk):
 
         preset = self._preset()
         settings = {
-            "speed": _bounded_int(self.speed.get(), preset.speed, 80, 300),
+            "speed": _bounded_int(self.speed.get(), preset.speed, 80, 450),
+            "language": language,
             "pitch": _bounded_int(self.pitch.get(), preset.pitch, 0, 99),
             "volume": _bounded_int(self.volume.get(), preset.amplitude, 0, 200),
             "normalize": bool(self.normalize_audio.get()),
@@ -587,6 +626,8 @@ class ClassicVoiceApp(tk.Tk):
         self.save_button.configure(state="disabled")
         self.stop_button.configure(state="normal")
         self.status.set("Preparando la voz…")
+        self._progress.configure(mode="indeterminate")
+        self._progress.start(12)
         self._worker = threading.Thread(
             target=self._run_generation,
             args=(mode, target, processed, preset, settings, self._cancel_event),
@@ -627,6 +668,7 @@ class ClassicVoiceApp(tk.Tk):
                 settings["speed"],
                 settings["pitch"],
                 settings["volume"],
+                language=settings.get("language"),
             )
             if cancel_event.is_set():
                 raise InterruptedError("cancelled")
@@ -699,6 +741,8 @@ class ClassicVoiceApp(tk.Tk):
         self.after(80, self._poll_events)
 
     def _finish_generation(self, mode: str, path: str | None, error: str | None, duration: float) -> None:
+        self._progress.stop()
+        self._progress.configure(mode="determinate", value=0)
         self._busy = False
         self._worker = None
         self.preview_button.configure(state="normal")
@@ -712,7 +756,7 @@ class ClassicVoiceApp(tk.Tk):
             self.status.set("Generación cancelada")
             return
         if mode == "export":
-            self.status.set(f"WAV guardado correctamente · {Path(path).name}")
+            self.status.set(f"WAV guardado correctamente · {duration:.1f} s")
             return
         self._preview_path = Path(path)
         try:
@@ -726,7 +770,7 @@ class ClassicVoiceApp(tk.Tk):
                 self.status.set("Reproduciendo vista previa")
                 self._playback_after = self.after(max(500, int(duration * 1000) + 350), lambda: self._playback_finished(token))
             else:
-                self.status.set(f"Vista previa generada · {Path(path).name}")
+                self.status.set("Vista previa generada")
         except Exception as exc:
             self.status.set("Vista previa generada, pero no se pudo reproducir")
             self._remove_preview()
@@ -801,7 +845,7 @@ class ClassicVoiceApp(tk.Tk):
         ttk.Label(page, text="Pronunciación", style="Header.TLabel").pack(anchor="w")
         description = ttk.Label(
             page,
-            text="Sustituye palabras o frases por su lectura hablada. Los cambios se aplican al generar el audio; tu texto permanece intacto.",
+            text=f"Reglas para {self._language().name if self._language() else 'el idioma seleccionado'}. Sustituye palabras o frases por su lectura hablada; tu texto permanece intacto.",
             style="Subtitle.TLabel",
             wraplength=560,
         )
