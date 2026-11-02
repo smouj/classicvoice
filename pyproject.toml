@@ -31,7 +31,7 @@ natural = [
   "kokoro-onnx==0.6.1",
   "espeakng-loader==0.2.4",
   "numpy==2.4.6",
-  "onnxruntime==1.31.0",
+  "onnxruntime==1.31.1",
   "phonemizer==3.4.0",
   "flatbuffers==25.12.19",
   "packaging==26.3",
